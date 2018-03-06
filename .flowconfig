@@ -1,0 +1,9 @@
+[ignore]
+.*/node_modules/.*
+
+[options]
+experimental.const_params=true
+esproposal.decorators=ignore
+esproposal.class_static_fields=enable
+esproposal.class_instance_fields=enable
+module.name_mapper='^lom_atom' -> '<PROJECT_ROOT>/src/index.js'

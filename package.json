@@ -1,0 +1,71 @@
+{
+  "name": "urc",
+  "version": "1.0.0",
+  "description": "Universal react connect decorator builder",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "config": {
+    "dest": "."
+  },
+  "jsnext:main": "dist/urc.es.js",
+  "module": "dist/urc.es.js",
+  "main": "dist/urc.js",
+  "umd:main": "dist/urc.umd.js",
+  "scripts": {
+    "release.major": "npm test && npm run build && standard-version -r major && git push --follow-tags origin master && npm publish",
+    "release.minor": "npm test && npm run build && standard-version -r minor && git push --follow-tags origin master && npm publish",
+    "release": "npm test && npm run build && standard-version && git push --follow-tags origin master && npm publish",
+    "build": "rimraf dist && rollup -c && cp index.js.flow.tpl $npm_package_main.flow && cp index.js.flow.tpl $npm_package_module.flow",
+    "test": "flow check && mocha",
+    "test.dev": "mocha --growl --watch",
+    "watch": "chokidar --initial -d 2000 -t 1000 'src/**/*.js' -c 'npm run build && cp -rvf *.js src dist $npm_package_config_dest/node_modules/urc'"
+  },
+  "author": "Stefan Zerkalica <zerkalica@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/zerkalica/lom_atom.git"
+  },
+  "keywords": [
+    "state",
+    "mobx",
+    "redux",
+    "observable",
+    "reactive",
+    "connect",
+    "inject",
+    "state management",
+    "react"
+  ],
+  "files": [
+    "*.map",
+    "*.js",
+    "*.flow",
+    ".flowconfig",
+    "README.md",
+    "LICENSE",
+    "src",
+    "flow-typed",
+    "dist"
+  ],
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.40",
+    "@babel/plugin-check-constants": "^7.0.0-beta.38",
+    "@babel/plugin-external-helpers": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-decorators": "^7.0.0-beta.40",
+    "@babel/plugin-transform-flow-strip-types": "^7.0.0-beta.40",
+    "@babel/preset-es2015": "^7.0.0-beta.40",
+    "@babel/register": "^7.0.0-beta.40",
+    "chokidar-cli": "^1.2.0",
+    "flow-bin": "^0.66.0",
+    "mocha": "^5.0.1",
+    "rimraf": "^2.6.2",
+    "rollup": "^0.56.3",
+    "rollup-plugin-babel": "^4.0.0-beta.2",
+    "rollup-plugin-uglify": "^3.0.0",
+    "standard-version": "^4.3.0",
+    "uglify-es": "^3.3.9"
+  }
+}
