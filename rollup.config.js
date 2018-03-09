@@ -29,24 +29,27 @@ const uglifyOpts = {
         toplevel: true
     }
 }
-//console.log(JSON.stringify(babelrc,0,' '))
-
-const commonConf = {
-    input: 'src/index.js',
-    plugins: [
-        babel(babelrc)
-    ].concat(process.env.UGLIFY === '1' ? [uglify(uglifyOpts, minify)] : []),
-    output: [
-        {sourcemap: true, file: pkg.module, format: 'es'},
+function getOutput(name) {
+    return [
+        {sourcemap: true, file: `dist/${name}.es.js`, format: 'es'},
+        {sourcemap: true, file: `dist/${name}.js`, format: 'cjs'},
+        {sourcemap: true, file: `dist/${name}.umd.js`, format: 'umd', name: name}
     ]
 }
 
+const plugins = [
+    babel(babelrc)
+].concat(process.env.UGLIFY === '1' ? [uglify(uglifyOpts, minify)] : [])
+
 export default [
-    commonConf,
-    Object.assign({}, commonConf, {
-        output: [
-            {sourcemap: true, file: pkg.main, format: 'cjs'},
-            {sourcemap: true, file: pkg['umd:main'], format: 'umd', name: pkg.name}
-        ]
-    })
+    {
+        input: 'src/index.js',
+        plugins,
+        output: getOutput(pkg.name)
+    },
+    {
+        input: 'src/createMobxAtom.js',
+        plugins,
+        output: getOutput('createMobxAtom')
+    }
 ]

@@ -1,9 +1,5 @@
 // @flow
-import type {IReactAtom, IReactHost} from './createConnect'
+export type {IReactAtom, IReactHost, IRenderError, ErrorProps} from './interfaces'
 
 export {default as createConnect} from './createConnect'
-
-export type {
-  IReactHost,
-  IReactAtom
-}
+export {default as AtomizedComponent} from './AtomizedComponent'

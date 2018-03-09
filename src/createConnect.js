@@ -1,148 +1,66 @@
 // @flow
+import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
+import AtomizedComponent from './AtomizedComponent'
 
-export interface IReactHost<Element> {
-    __value(propsChanged: boolean): Element;
-    forceUpdate(): void;
+function mergeKeys(src: string[], dest: string[]): string[] {
+    for (let i = 0; i < src.length; i++) {
+        const key = src[i]
+        if (dest.indexOf(key) === -1) dest.push(key)
+    }
+    return dest
 }
-
-export interface IReactAtom<Element> {
-    constructor(displayName: string, owner: IReactHost<Element>): self;
-    reset(): void;
-    destructor(): void;
-    value(): Element;
-    extendContext<Src, Dest: Src>(context: Src, key: Function, propsChanged: boolean): Dest;
-}
-
-type ErrorProps = {error: Error, children: any}
-export type IRenderError<Element, Context> = (props: ErrorProps, context: Context) => Element
 
 export default function createConnect<Element>(
-    {ReactAtom, renderError, BaseComponent}: {
+    {ReactAtom, renderError, BaseComponent, MixinComponent}: {
         ReactAtom: Class<IReactAtom<Element>>;
         renderError?: IRenderError<Element, *>;
         BaseComponent?: Function;
+        MixinComponent?: Class<IReactHost<Element>>
     }
 ) {
-    class AtomizedComponent<Props: Object, State, Context> implements IReactHost<Element> {
-        static displayName: string
-        props: Props
-        context: Context
-
-        __atom: IReactAtom<Element>
-        _lastData: ?Element
-
-        __componentWillMount: void | () => void
-        __componentWillUnmount: void | () => void
-        __shouldComponentUpdate: void | (props: Props, state: State, context: Context) => boolean
-        __render: (props: Props, context: Context) => Element
-        __componentDidCatch: (error: Error, init: any) => void;
-
-        forceUpdate: () => void
-
-        componentWillMount() {
-            const props = this.props
-            this._lastData = null
-            this._lastError = null
-            if (this.__componentWillMount) this.__componentWillMount()
-            this.__atom = new ReactAtom(
-                props && props.id
-                    ? props.id
-                    : this.constructor.displayName,
-                this
-            )
-        }
-
-        shouldComponentUpdate(props: Props, state: State, context: Context) {
-            const oldProps = this.props
-            let count = 0
-            for (let k in oldProps) {
-                count++
-                if (oldProps[k] !== props[k]) {
-                    this.__atom.reset()
-                    return true
-                }
-            }
-            for (let k in props) {
-                count--
-                if (oldProps[k] !== props[k]) {
-                    this.__atom.reset()
-                    return true
-                }
-            }
-            if (count !== 0) {
-                this.__atom.reset()
-                return true
-            }
-
-            return this.__shouldComponentUpdate ? this.__shouldComponentUpdate(props, state, context) : false
-        }
-
-        componentWillUnmount() {
-            if (this.__componentWillUnmount) this.__componentWillUnmount()
-            this.__atom.destructor()
-            this.__atom = (null: any)
-            this._lastData = null
-            this._lastError = null
-        }
-
-        _lastError: ?Error
-
-        componentDidCatch(error: Error, init: any) {
-            if (this.__componentDidCatch) this.__componentDidCatch(error, init)
-            this._lastError = error
-            this.forceUpdate()
-        }
-
-        __value(propsChanged: boolean): Element {
-            let data: Element = (null: any)
-            const context = this.context
-            try {
-                if (this._lastError) throw this._lastError
-                data = this.__render(
-                    this.props,
-                    this.__atom.extendContext(this.context, this.constructor, propsChanged)
-                )
-                this._lastData = data
-            } catch (error) {
-                this._lastError = null
-                if (renderError) {
-                    data = renderError.call(
-                        this,
-                        {error, children: this._lastData, origProps: this.props},
-                        this.__atom.extendContext(this.context, renderError, propsChanged)
-                    )
-                } else {
-                    console.error(error)
-                }
-            }
-
-            return data
-        }
-
-        render(): Element {
-            return this.__atom.value()
-        }
+    AtomizedComponent.ReactAtom = (ReactAtom: Class<IReactAtom<any>>)
+    const replacement: Object = (MixinComponent || AtomizedComponent).prototype
+    replacement._renderError = renderError
+    let keys = Object.getOwnPropertyNames(AtomizedComponent.prototype)
+    if (replacement !== AtomizedComponent.prototype) {
+        mergeKeys(Object.getOwnPropertyNames(replacement), keys)
     }
 
-    const replacement: Object = AtomizedComponent.prototype
-    const replacementKeys: string[] = Object.getOwnPropertyNames(replacement)
+    const replacementKeys: string[] = keys
+        .filter((prop) => prop !== 'constructor')
+
+    const names: Map<string, number> = new Map()
 
     return function reactConnect<ComponentClass: Function>(
         Parent: ComponentClass
     ): ComponentClass {
+        if (Parent.isConnected) throw new Error(`${Parent.displayName || Parent.name} already connected`)
+        Parent.isConnected = true
+
         let cls = Parent
-        if (cls.prototype.render === undefined && typeof Parent === 'function') {
+        if (typeof cls.prototype.render !== 'function' && typeof Parent === 'function') {
             if (!BaseComponent) throw new Error('Setup createConnect with BaseComponent')
-            cls = function(props, context) {
+            cls = function ConnectedComponent(props, context) {
                 return BaseComponent.call(this, props, context) || this
             }
             cls.prototype = Object.create(BaseComponent.prototype)
             cls.prototype.constructor = cls
             cls.prototype.render = Parent
             cls.displayName = Parent.displayName || Parent.name
-            cls.contextTypes = Parent.contextTypes
-            cls.propTypes = Parent.propTypes
-            cls.defaultProps = Parent.defaultProps
+            const props = Object.getOwnPropertyNames(Parent)
+            for (let i = 0; i < props.length; i++) {
+                const key = props[i]
+                if (!(key in cls)) cls[key] = Parent[key]
+            }
+        }
+
+        let prefix = names.get(cls.displayName)
+        if (prefix !== undefined) {
+            prefix++
+            names.set(cls.displayName, prefix)
+            cls.displayName = cls.displayName + prefix
+        } else {
+            names.set(cls.displayName, 0)
         }
 
         const target = cls.prototype

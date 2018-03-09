@@ -1,5 +1,5 @@
 // @flow
-import type {IReactAtom, IReactHost} from './createConnect'
+import type {IReactAtom, IReactHost} from './interfaces'
 
 interface IMobxReaction {
     constructor(name: string, onInvalidate: () => void): IMobxReaction;
@@ -48,10 +48,6 @@ export default function createMobxAtom(Reaction: Class<IMobxReaction>): Class<IR
             }
 
             return (this._cache: any)
-        }
-
-        extendContext<Src, Dest: Src>(context: Src, key: Function, propsChanged: boolean): Dest {
-            return (context: any)
         }
 
         destructor() {
