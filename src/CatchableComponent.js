@@ -3,7 +3,8 @@
 import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
 import ObserverComponent from './ObserverComponent'
 
-export default class CatchableComponent<Props: Object, State, Context, Element> extends ObserverComponent<Props, State, Context, Element> {
+export default class CatchableComponent<Props: Object, State, Context, Element>
+    extends ObserverComponent<Props, State, Context, Element> {
     _lastError: ?Error
     _lastData: ?Element
     _renderError: IRenderError<Element, Context>
@@ -22,6 +23,7 @@ export default class CatchableComponent<Props: Object, State, Context, Element> 
             this.forceUpdate()
         }
     }
+    _getContext: (key: Function, propsChanged: boolean) => Context
 
     __value(propsChanged: boolean): Element {
         let data: Element = (null: any)
