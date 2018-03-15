@@ -1,6 +1,6 @@
 {
   "name": "urc",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Universal react connect decorator builder",
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
