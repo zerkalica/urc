@@ -1,48 +1,49 @@
 // @flow
 import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
-import AtomizedComponent from './AtomizedComponent'
+import CatchableComponent from './CatchableComponent'
+import ObserverComponent from './ObserverComponent'
 
-function mergeKeys(src: string[], dest: string[]): string[] {
-    for (let i = 0; i < src.length; i++) {
-        const key = src[i]
-        if (dest.indexOf(key) === -1) dest.push(key)
-    }
+function getPropertyNamesDeep(proto: Object): string[] {
+    let next = proto
+    const dest: string[] = []
+    do {
+        const src = Object.getOwnPropertyNames(next)
+        for (let i = 0; i < src.length; i++) {
+            const key = src[i]
+            if (key !== 'constructor' && dest.indexOf(key) === -1) dest.push(key)
+        }
+        next = Object.getPrototypeOf(next)
+    } while (next && next.constructor !== Object)
     return dest
 }
 
-export default function createConnect<Element>(
-    {ReactAtom, renderError, BaseComponent, MixinComponent}: {
+export default function createConnect<Element, ComponentClass: Function>(
+    {ReactAtom, renderError, BaseComponent, MixinComponent, normalizeClass}: {
         ReactAtom: Class<IReactAtom<Element>>;
         renderError?: IRenderError<Element, *>;
         BaseComponent?: Function;
-        MixinComponent?: Class<IReactHost<Element>>
+        MixinComponent?: Class<IReactHost<Element>>,
+        normalizeClass?: (cls: ComponentClass) => ComponentClass
     }
 ) {
-    AtomizedComponent.ReactAtom = (ReactAtom: Class<IReactAtom<any>>)
-    const replacement: Object = (MixinComponent || AtomizedComponent).prototype
-    replacement._renderError = renderError
-    let keys = Object.getOwnPropertyNames(AtomizedComponent.prototype)
-    if (replacement !== AtomizedComponent.prototype) {
-        mergeKeys(Object.getOwnPropertyNames(replacement), keys)
-    }
+    ObserverComponent.ReactAtom = (ReactAtom: Class<IReactAtom<any>>)
 
-    const replacementKeys: string[] = keys
-        .filter((prop) => prop !== 'constructor')
+    const replacement: Object = (MixinComponent || (renderError ? CatchableComponent : ObserverComponent)).prototype
+    if (renderError && !replacement._renderError) replacement._renderError = renderError
+    const replacementKeys = getPropertyNamesDeep(replacement)
 
-    const names: Map<string, number> = new Map()
-
-    return function reactConnect<ComponentClass: Function>(
+    return function reactConnect(
         Parent: ComponentClass
     ): ComponentClass {
         if (Parent.isConnected) throw new Error(`${Parent.displayName || Parent.name} already connected`)
         Parent.isConnected = true
 
-        let cls = Parent
+        let cls: ComponentClass = Parent
         if (typeof cls.prototype.render !== 'function' && typeof Parent === 'function') {
             if (!BaseComponent) throw new Error('Setup createConnect with BaseComponent')
-            cls = function ConnectedComponent(props, context) {
+            cls = ((function ConnectedComponent(props, context) {
                 return BaseComponent.call(this, props, context) || this
-            }
+            }: any): ComponentClass)
             cls.prototype = Object.create(BaseComponent.prototype)
             cls.prototype.constructor = cls
             cls.prototype.render = Parent
@@ -50,17 +51,8 @@ export default function createConnect<Element>(
             const props = Object.getOwnPropertyNames(Parent)
             for (let i = 0; i < props.length; i++) {
                 const key = props[i]
-                if (!(key in cls)) cls[key] = Parent[key]
+                if (!(key in (cls: Object))) cls[key] = Parent[key]
             }
-        }
-
-        let prefix = names.get(cls.displayName)
-        if (prefix !== undefined) {
-            prefix++
-            names.set(cls.displayName, prefix)
-            cls.displayName = cls.displayName + prefix
-        } else {
-            names.set(cls.displayName, 0)
         }
 
         const target = cls.prototype
@@ -70,6 +62,6 @@ export default function createConnect<Element>(
             target[key] = replacement[key]
         }
 
-        return (cls: any)
+        return ((normalizeClass ? normalizeClass(cls) : cls): any)
     }
 }

@@ -2,13 +2,12 @@
 
 import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
 
-export default class AtomizedComponent<Props: Object, State, Context, Element> implements IReactHost<Element> {
+export default class ObserverComponent<Props: Object, State, Context, Element> implements IReactHost<Element> {
     static displayName: string
     props: Props
     context: Context
 
     __atom: IReactAtom<Element>
-    _lastData: ?Element
     _renderError: IRenderError<Element, Context>
 
     __componentWillMount: void | () => void
@@ -23,10 +22,8 @@ export default class AtomizedComponent<Props: Object, State, Context, Element> i
 
     componentWillMount() {
         const props = this.props
-        this._lastData = null
-        this._lastError = null
         if (this.__componentWillMount) this.__componentWillMount()
-        this.__atom = new AtomizedComponent.ReactAtom(
+        this.__atom = new ObserverComponent.ReactAtom(
             props && props.id
                 ? props.id
                 : this.constructor.displayName,
@@ -63,19 +60,6 @@ export default class AtomizedComponent<Props: Object, State, Context, Element> i
         if (this.__componentWillUnmount) this.__componentWillUnmount()
         this.__atom.destructor()
         this.__atom = (null: any)
-        this._lastData = null
-        this._lastError = null
-    }
-
-    _lastError: ?Error
-
-    componentDidCatch(error: Error, init: mixed) {
-        if (this.__componentDidCatch) {
-            this.__componentDidCatch(error, init)
-        } else {
-            this._lastError = error
-            this.forceUpdate()
-        }
     }
 
     _getContext(key: Function, propsChanged: boolean): Context {
@@ -83,27 +67,10 @@ export default class AtomizedComponent<Props: Object, State, Context, Element> i
     }
 
     __value(propsChanged: boolean): Element {
-        let data: Element = (null: any)
-        try {
-            if (this._lastError) throw this._lastError
-            data = this.__render(
-                this.props,
-                this._getContext(this.constructor, propsChanged)
-            )
-            this._lastData = data
-        } catch (error) {
-            this._lastError = null
-            if (this._renderError) {
-                data = this._renderError(
-                    {error, children: this._lastData, origProps: this.props},
-                    this._getContext(this._renderError, propsChanged)
-                )
-            } else {
-                throw error
-            }
-        }
-
-        return data
+        return this.__render(
+            this.props,
+            this._getContext(this.constructor, propsChanged)
+        )
     }
 
     render(): Element {

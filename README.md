@@ -63,9 +63,9 @@ const MyPureComponent = connect(() => {
 ## Custom component mixin
 
 ```js
-import {AtomizedComponent, createConnect} from 'urc'
+import {ObserverComponent, createConnect} from 'urc'
 
-class MyAtomizedComponent<Props, State, Context, Element> extends AtomizedComponent<Props, State, Context, Element> {
+class MyObserverComponent<Props, State, Context, Element> extends ObserverComponent<Props, State, Context, Element> {
     static instance: number
 
     componentWillMount() {
@@ -94,7 +94,7 @@ class MyAtomizedComponent<Props, State, Context, Element> extends AtomizedCompon
 const connect = createConnect({
     ReactAtom: createMobxAtom(Reaction),
     BaseComponent: React.Component,
-    MixinComponent: MyAtomizedComponent
+    MixinComponent: MyObserverComponent
 })
 
 const MyPureComponent = connect(() => {

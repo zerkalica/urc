@@ -2,4 +2,5 @@
 export type {IReactAtom, IReactHost, IRenderError, ErrorProps} from './interfaces'
 
 export {default as createConnect} from './createConnect'
-export {default as AtomizedComponent} from './AtomizedComponent'
+export {default as ObserverComponent} from './ObserverComponent'
+export {default as CatchableComponent} from './CatchableComponent'
