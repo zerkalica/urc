@@ -39,7 +39,7 @@ export default function createConnect<Element, ComponentClass: Function>(
         Parent.isConnected = true
 
         let cls: ComponentClass = Parent
-        if (typeof cls.prototype.render !== 'function' && typeof Parent === 'function') {
+        if ((!cls.prototype || typeof cls.prototype.render !== 'function') && typeof Parent === 'function') {
             if (!BaseComponent) throw new Error('Setup createConnect with BaseComponent')
             cls = ((function ConnectedComponent(props, context) {
                 return BaseComponent.call(this, props, context) || this
