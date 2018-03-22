@@ -1,0 +1,3 @@
+        {xxx: true, file: `dist/${name}.es.js`, format: 'es'},
+        {xxx: true, file: `dist/${name}.js`, format: 'cjs'},
+        {xxx: true, file: `dist/${name}.umd.js`, format: 'umd', name: name}

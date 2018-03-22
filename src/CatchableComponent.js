@@ -25,21 +25,18 @@ export default class CatchableComponent<Props: Object, State, Context, Element>
     }
     _getContext: (key: Function, propsChanged: boolean) => Context
 
-    __value(propsChanged: boolean): Element {
+    render(): Element {
         let data: Element = (null: any)
         try {
             if (this._lastError) throw this._lastError
-            data = this.__render(
-                this.props,
-                this._getContext(this.constructor, propsChanged)
-            )
+            data = this.__atom.value().valueOf()
             this._lastData = data
         } catch (error) {
             this._lastError = null
             if (this._renderError) {
                 data = this._renderError(
                     {error, children: this._lastData, origProps: this.props},
-                    this._getContext(this._renderError, propsChanged)
+                    this._getContext(this._renderError, false)
                 )
             } else {
                 throw error
@@ -48,4 +45,5 @@ export default class CatchableComponent<Props: Object, State, Context, Element>
 
         return data
     }
+
 }

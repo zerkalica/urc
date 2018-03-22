@@ -2,6 +2,8 @@
 
 Helpers for creating tools like react-redux, mobx-react with minimal boilerplate.
 
+[Fiddle example with lom_atom](https://jsfiddle.net/zerkalica/j8ds07mm/28/)
+
 ## Mobx simple example
 
 ```js
