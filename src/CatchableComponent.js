@@ -3,7 +3,7 @@
 import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
 import ObserverComponent from './ObserverComponent'
 
-export default class CatchableComponent<Props: Object, State, Context, Element>
+export default class CatchableComponent<Props: Object, State, Context, Element: Object>
     extends ObserverComponent<Props, State, Context, Element> {
     _lastError: ?Error
     _lastData: ?Element

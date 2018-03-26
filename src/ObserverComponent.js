@@ -2,7 +2,7 @@
 
 import type {IReactAtom, IRenderError, IReactHost} from './interfaces'
 
-export default class ObserverComponent<Props: Object, State, Context, Element> implements IReactHost<Element> {
+export default class ObserverComponent<Props: Object, State, Context, Element: Object> implements IReactHost<Element> {
     static displayName: string
     props: Props
     context: Context
