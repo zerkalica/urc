@@ -1,71 +1,36 @@
 {
   "name": "urc",
-  "version": "1.0.8",
   "description": "Universal react connect decorator builder",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org"
-  },
-  "config": {
-    "dest": "."
-  },
-  "jsnext:main": "dist/urc.es.js",
-  "module": "dist/urc.es.js",
-  "main": "dist/urc.js",
-  "umd:main": "dist/urc.umd.js",
+  "version": "2.0.0",
+  "private": true,
   "scripts": {
-    "release.major": "npm test && npm run build && standard-version -r major && git push --follow-tags origin master && npm publish",
-    "release.minor": "npm test && npm run build && standard-version -r minor && git push --follow-tags origin master && npm publish",
-    "release": "npm test && npm run build && standard-version && git push --follow-tags origin master && npm publish",
-    "build": "rimraf dist && rollup -c && cp index.js.flow.tpl $npm_package_main.flow && cp createMobxAtom.js.flow.tpl dist/createMobxAtom.js.flow",
-    "test": "flow check",
-    "test.dev": "mocha --growl --watch",
-    "watch": "chokidar --initial -d 2000 -t 1000 'src/**/*.js' -c 'npm run build && cp -rvf *.js src dist $npm_package_config_dest/node_modules/urc'"
+    "clean": "rm -rf packages/*/.rpt2_cache packages/*/dist",
+    "clean.all": "lerna clean --yes && rm -rf package-lock.json packages/*/package-lock.json node_modules packages/*/.rpt2_cache packages/*/dist docs/*",
+    "up": "npm run clean.all ; ncu -ua ; npx lerna exec -- ncu -ua; npm install",
+    "build": "rollup -c node:@zerollup/rollup-preset-ts",
+    "start": "npm run dev",
+    "dev": "node --max-old-space-size=8192 node_modules/rollup/bin/rollup -w -c node:@zerollup/rollup-preset-ts",
+    "postinstall": "lerna bootstrap --hoist --no-ci",
+    "publish": "npm run build && lerna publish --conventional-commits --yes",
+    "test": "jest",
+    "test.watch": "jest --watchAll",
+    "debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
-  "author": "Stefan Zerkalica <zerkalica@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "http://github.com/zerkalica/lom_atom.git"
+  "author": {
+    "name": "Stefan Zerkalica",
+    "email": "zerkalica@gmail.com"
   },
-  "keywords": [
-    "state",
-    "mobx",
-    "redux",
-    "observable",
-    "reactive",
-    "connect",
-    "inject",
-    "state management",
-    "react"
-  ],
-  "files": [
-    "*.map",
-    "*.js",
-    "*.flow",
-    ".flowconfig",
-    "README.md",
-    "LICENSE",
-    "src",
-    "flow-typed",
-    "dist"
-  ],
+  "license": "ISC",
   "devDependencies": {
-    "@babel/core": "^7.0.0-beta.40",
-    "@babel/plugin-check-constants": "^7.0.0-beta.38",
-    "@babel/plugin-external-helpers": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-decorators": "^7.0.0-beta.40",
-    "@babel/plugin-transform-flow-strip-types": "^7.0.0-beta.40",
-    "@babel/preset-es2015": "^7.0.0-beta.40",
-    "@babel/register": "^7.0.0-beta.40",
-    "chokidar-cli": "^1.2.0",
-    "flow-bin": "^0.66.0",
-    "mocha": "^5.0.1",
-    "rimraf": "^2.6.2",
-    "rollup": "^0.56.3",
-    "rollup-plugin-babel": "^4.0.0-beta.2",
-    "rollup-plugin-uglify": "^3.0.0",
-    "standard-version": "^4.3.0",
-    "uglify-es": "^3.3.9"
+    "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.9",
+    "@zerollup/rollup-preset-ts": "^1.6.2",
+    "@zerollup/ts-transform-paths": "^1",
+    "jest": "^23.6.0",
+    "lerna": "^3.4.3",
+    "rollup": "^0.67.3",
+    "rollup-plugin-typescript2": "^0.18.0",
+    "ts-jest": "^23.10.4",
+    "typescript": "^3.1.6"
   }
 }

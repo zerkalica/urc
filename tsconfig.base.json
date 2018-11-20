@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"newLine": "LF",
+		"module": "esnext",
+		"target": "es6",
+		"allowSyntheticDefaultImports": true,
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"declaration": true,
+		"lib": [
+			"dom",
+			"esnext"
+		],
+		"jsx": "react",
+		"experimentalDecorators": true,
+		"baseUrl": "packages",
+		"paths": {
+			"urc": [ "urc/src" ],
+			"urc-*": [ "urc-*/src" ]
+		}
+	},
+	"exclude": ["dist", "node_modules"]
+}

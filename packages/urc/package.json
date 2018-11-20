@@ -1,0 +1,37 @@
+{
+  "name": "urc",
+  "version": "2.0.0",
+  "license": "MIT",
+  "description": "Universal react connect decorator builder",
+  "author": {
+    "name": "Stefan Zerkalica",
+    "email": "zerkalica@gmail.com"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "https://github.com/zerkalica/urc",
+  "bugs": {
+    "url": "https://github.com/zerkalica/urc/issues"
+  },
+  "homepage": "https://github.com/zerkalica/urc/packages/urc/#readme",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/typings/index.d.ts",
+  "files": [
+    "*.map",
+    "*.js",
+    "*.md",
+    "package.json",
+    "LICENSE",
+    "@types",
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "mobx",
+    "connect",
+    "decorator",
+    "HOC"
+  ]
+}

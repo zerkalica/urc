@@ -1,0 +1,48 @@
+{
+  "name": "urc-atom",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "Universal react connect - mol_atom2 adapter",
+  "author": {
+    "name": "Stefan Zerkalica",
+    "email": "zerkalica@gmail.com"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "https://github.com/zerkalica/urc",
+  "bugs": {
+    "url": "https://github.com/zerkalica/urc/issues"
+  },
+  "homepage": "https://github.com/zerkalica/urc/packages/urc-atom/#readme",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/typings/index.d.ts",
+  "files": [
+    "*.map",
+    "*.js",
+    "*.md",
+    "package.json",
+    "LICENSE",
+    "@types",
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "mol",
+    "atom",
+    "connect",
+    "decorator",
+    "HOC"
+  ],
+  "devDependencies": {
+    "@types/react": "^16.7.6",
+    "@types/react-dom": "^16.0.9",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3"
+  },
+  "dependencies": {
+    "urc": "^2.0.0",
+    "mol_atom2_all": "^1.3.8"
+  }
+}
