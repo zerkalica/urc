@@ -74,8 +74,12 @@ const css = new AppTheme().css
 
 export interface AppProps {
     id: string
-    _: Deps<typeof LocationStore>
-        & {fetchFn: typeof fetch}
+    _: Omit<
+        Deps<typeof LocationStore> &
+            Deps<typeof TodoApp> &
+            Deps<typeof Hello> & {fetchFn: typeof fetch},
+        'fetch'
+    >
 }
 
 @observer

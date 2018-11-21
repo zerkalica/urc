@@ -1,4 +1,4 @@
-import fetchMock from 'fetch-mock/es5/client'
+import fetchMock from 'fetch-mock'
 
 interface FetchMock {
     mock(mock: Mock): void
