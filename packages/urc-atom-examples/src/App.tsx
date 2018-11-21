@@ -1,5 +1,7 @@
 import * as React from 'react'
 import {Hello} from './hello'
+import {TodoApp} from './todomvc'
+
 import {
     observer,
     sheet,
@@ -72,13 +74,8 @@ const css = new AppTheme().css
 
 export interface AppProps {
     id: string
-    _: Omit<
-        {locationStore: LocationStore}
-        & {fetch: typeof fetch}
-        & Deps<typeof LocationStore>
-        & {fetchFn: typeof fetch},
-        'locationStore' | 'fetch'
-    >
+    _: Deps<typeof LocationStore>
+        & {fetchFn: typeof fetch}
 }
 
 @observer
@@ -146,7 +143,7 @@ export class App extends React.PureComponent<AppProps> {
                 <div id={`${id}-apps`} className={css.apps}>
                     <div id={`${id}-layout`} className={css.layout}>
                         <h1 id={`${id}-title`}>{page.title}</h1>
-                        {/* {page.id === 'todomvc' && <TodoApp id={pageId} _={_} />} */}
+                        {page.id === 'todomvc' && <TodoApp id={pageId} _={_} />}
                         {page.id === 'hello' && <Hello id={pageId} _={_} />}
                     </div>
                 </div>

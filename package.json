@@ -8,6 +8,7 @@
     "clean.all": "lerna clean --yes && rm -rf package-lock.json packages/*/package-lock.json node_modules packages/*/.rpt2_cache packages/*/dist docs/*",
     "up": "npm run clean.all ; ncu -ua ; npx lerna exec -- ncu -ua; npm install",
     "build": "rollup -c node:@zerollup/rollup-preset-ts",
+    "docs": "BUILD_PKG=urc-atom-examples npm run build && rm -rf docs/urc-atom-examples && cp -rf packages/urc-atom-examples/dist docs/urc-atom-examples",
     "start": "npm run dev",
     "dev": "node --max-old-space-size=8192 node_modules/rollup/bin/rollup -w -c node:@zerollup/rollup-preset-ts",
     "postinstall": "lerna bootstrap --hoist --no-ci",

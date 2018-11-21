@@ -1,4 +1,4 @@
-// ZEROLLUP_CONFIG_BASE_URL = /
+// ZEROLLUP_CONFIG_BASE_URL = ./
 
 export interface Config {
     /**
