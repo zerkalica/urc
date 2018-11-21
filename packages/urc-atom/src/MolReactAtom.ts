@@ -31,6 +31,7 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
         return this.reactHost.__value()
     }
 
+    protected inForceUpdate: boolean = false
     protected forceUpdate<V>(value: V): V {
         const {propsChanged} = this
         this.propsChanged = false
@@ -41,12 +42,20 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
 
             // Nulling Fiber.current needed, atom value can access slave.master and obey to itself
             Fiber.current = null
+            this.inForceUpdate = true
             this.reactHost.forceUpdate()
         } catch (error) {
             if (!this.error) super.fail(error)
         }
+        this.inForceUpdate = false
 
         return value
+    }
+
+    get() {
+        if (this.inForceUpdate && this.error) throw this.error
+
+        return super.get()
     }
 
     push(next: ReactNode): ReactNode {

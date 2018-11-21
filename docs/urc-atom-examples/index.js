@@ -23896,6 +23896,7 @@
             super();
             this.reactHost = reactHost;
             this.propsChanged = true;
+            this.inForceUpdate = false;
             this[Symbol.toStringTag] = id;
             this.calculate = this.calc;
             // Each react component atom - autorunned separate unit.
@@ -23924,13 +23925,20 @@
                 // forceUpdate can call render and get atom value again. If error - ignore it already stored in atom.
                 // Nulling Fiber.current needed, atom value can access slave.master and obey to itself
                 Fiber.current = null;
+                this.inForceUpdate = true;
                 this.reactHost.forceUpdate();
             }
             catch (error) {
                 if (!this.error)
                     super.fail(error);
             }
+            this.inForceUpdate = false;
             return value;
+        }
+        get() {
+            if (this.inForceUpdate && this.error)
+                throw this.error;
+            return super.get();
         }
         push(next) {
             return this.forceUpdate(super.push(next));
@@ -42581,22 +42589,30 @@
 
     class HelloModel {
         constructor({ id, _ }) {
+            this.userChanged = undefined;
+            this[Symbol.toStringTag] = id;
             this.fetch = _.fetch;
         }
         get user() {
-            return this.fetch('/api/hello/user').name;
+            return this.userChanged || this.fetch('/api/hello/user').name;
         }
-        set user(name) { }
+        set user(name) {
+            this.userChanged = name;
+        }
         save() {
             this.fetch('/api/hello/user', {
                 method: 'PUT',
                 body: JSON.stringify({ name })
             });
+            this.userChanged = undefined;
         }
         setUser(e) {
             this.user = e.target.value;
         }
     }
+    __decorate([
+        mem
+    ], HelloModel.prototype, "userChanged", void 0);
     __decorate([
         mem
     ], HelloModel.prototype, "user", null);

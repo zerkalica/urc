@@ -14,15 +14,20 @@ class HelloModel {
             fetch: <V>(url: string, init?: RequestInit) => V
         }
     }) {
+        this[Symbol.toStringTag] = id
         this.fetch = _.fetch
     }
 
-    get user(): string {
-        return (this.fetch('/api/hello/user') as {name: string}).name
-    }
+    @mem userChanged: string | void = undefined
 
     @mem
-    set user(name: string) {}
+    get user(): string {
+        return this.userChanged || (this.fetch('/api/hello/user') as {name: string}).name
+    }
+
+    set user(name: string) {
+        this.userChanged = name
+    }
 
     @action
     save() {
@@ -30,6 +35,7 @@ class HelloModel {
             method: 'PUT',
             body: JSON.stringify({name})
         })
+        this.userChanged = undefined
     }
 
     @action
