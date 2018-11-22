@@ -14,6 +14,7 @@ type ErrorInfo = any
 
 export interface Component<Props, State, ReactNode> {
     props: Props
+    state: State
     componentDidUpdate?(
         prevProps: Readonly<Props>,
         prevState: Readonly<State>,
@@ -58,8 +59,9 @@ function createObserverComponent<
         ? OrigComponent
         : undefined
 
-    const displayName = (OrigComponent as {displayName?: string}).displayName
-        || OrigComponent.name
+    const displayName =
+        (OrigComponent as {displayName?: string}).displayName ||
+        OrigComponent.name
 
     const Cls = class<Props, State> extends (renderFunction
         ? BaseComponent
@@ -68,20 +70,21 @@ function createObserverComponent<
         props: Props
 
         __atom: IReactAtom<ReactNode>
-        __render: (props?: Props) => ReactNode
+        __origRender: (props?: Props) => ReactNode
         __lastError: Error | void
         __lastData: ReactNode | void
 
         constructor(props: Props, context?: any) {
             super(props, context)
-            const id = (props && (props as {id?: string}).id) || (this.constructor as {displayName?: string}).displayName
+            const id =
+                (props && (props as {id?: string}).id) ||
+                (this.constructor as {displayName?: string}).displayName
 
             this[Symbol.toStringTag] = id
-            this.__atom = new ReactAtom(
-                `${id}.__atom`,
-                this as IReactHost<ReactNode>
-            )
-            this.__render = renderFunction || super.render
+            this.__atom = new ReactAtom(id, this as IReactHost<
+                ReactNode
+            >)
+            this.__origRender = renderFunction || super.render
             this.__lastError = undefined
             if (renderError) {
                 this.__lastData = undefined
@@ -90,7 +93,7 @@ function createObserverComponent<
         }
 
         __value() {
-            return this.__render(this.props)
+            return this.__origRender(this.props)
         }
 
         componentDidCatch(error: Error, init: ErrorInfo) {
@@ -107,7 +110,8 @@ function createObserverComponent<
         ): void {
             if (super.componentDidUpdate)
                 super.componentDidUpdate(prevProps, prevState, snapshot)
-            this.__atom.reset()
+            if (prevProps !== this.props || prevState !== this.state)
+                this.__atom.reset()
         }
 
         componentWillUnmount() {
@@ -146,7 +150,7 @@ function createObserverComponent<
         }
     }
 
-    return Cls as unknown as Orig
+    return (Cls as unknown) as Orig
 }
 
 export function createDecorator<
