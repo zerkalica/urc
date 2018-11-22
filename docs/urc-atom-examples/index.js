@@ -23469,9 +23469,9 @@
                 $mol_fiber.schedule().then(this.get.bind(this));
             }
             push(value) {
-                value = $.$mol_conform(value, this.value);
+                value = this.$.$mol_conform(value, this.value);
                 if (this.value !== value) {
-                    if ($.$mol_owning_catch(this, value)) {
+                    if (this.$.$mol_owning_catch(this, value)) {
                         value[Symbol.toStringTag] = this[Symbol.toStringTag];
                     }
                     this.$.$mol_log(this, value, '🠈', this.value);
@@ -23550,7 +23550,7 @@
                     }
                 }
                 if (this.error)
-                    $.$mol_fail_hidden(this.error);
+                    this.$.$mol_fail_hidden(this.error);
                 return this.value;
             }
             limit() {
@@ -23562,7 +23562,7 @@
                     $mol_fiber.deadline = Math.max($mol_fiber.deadline, now + $mol_fiber.quant);
                     return;
                 }
-                $.$mol_fail_hidden($mol_fiber.schedule());
+                this.$.$mol_fail_hidden($mol_fiber.schedule());
             }
             get master() {
                 return this.masters[this.cursor];
@@ -23593,12 +23593,12 @@
                 master.dislead(this.masters[master_index + 1]);
                 this.masters[master_index] = undefined;
                 this.masters[master_index + 1] = undefined;
-                $.$mol_array_trim(this.masters);
+                this.$.$mol_array_trim(this.masters);
             }
             obsolete_slaves() { }
             obsolete(master_index) { }
             forget() {
-                if ($.$mol_owning_check(this, this.value)) {
+                if (this.$.$mol_owning_check(this, this.value)) {
                     this.value.destructor();
                 }
                 this.value = undefined;
@@ -23897,6 +23897,7 @@
             this.reactHost = reactHost;
             this.propsChanged = true;
             this.inForceUpdate = false;
+            this.$ = Object.assign({}, this.$, { $mol_conform(a, b) { return a; } });
             this[Symbol.toStringTag] = id;
             this.calculate = this.calc;
             // Each react component atom - autorunned separate unit.
@@ -23955,16 +23956,32 @@
         return createDecorator(MolReactAtom, BaseComponent, renderError);
     }
 
-    const { $mol_fiber, $mol_fiber_sync, $mol_atom2_field, $mol_atom2_dict, $mol_fiber_method } = $$1;
+    const { $mol_fiber, $mol_fiber_sync, $mol_atom2_field, $mol_atom2_dict } = $$1;
     const dict = $mol_atom2_dict;
     const mem = $mol_atom2_field;
-    const action = $mol_fiber_method;
+    function action(obj, name, descr) {
+        const calculate = descr.value;
+        function $mol_fiber_action_wrapper(slave, ...args) {
+            const master = new $mol_fiber();
+            master.calculate = calculate.bind(this, ...args);
+            master[Symbol.toStringTag] = `${this}.${name}()`;
+            return master.get();
+        }
+        const get = function () {
+            return $mol_fiber_action_wrapper.bind(this, $mol_fiber.current);
+        };
+        return {
+            enumerable: descr.enumerable,
+            configurable: true,
+            get,
+        };
+    }
     /**
      * Add fiber cache to fetch-like function.
      */
     function fiberize(fetchFn, normalize) {
         return $mol_fiber_sync(function fiberizedFetch(url, init = {}) {
-            const controller = new AbortController;
+            const controller = new AbortController();
             init.signal = controller.signal;
             $mol_fiber.current.abort = controller.abort.bind(controller);
             return fetchFn(url, init).then(normalize);
@@ -24081,9 +24098,6 @@
     __decorate([
         action
     ], PageRepository.prototype, "setPageId", null);
-    __decorate([
-        action
-    ], PageRepository.prototype, "getPageUrl", null);
     __decorate([
         mem
     ], PageRepository.prototype, "page", null);
@@ -42594,15 +42608,17 @@
             this.fetch = _.fetch;
         }
         get user() {
-            return this.userChanged || this.fetch('/api/hello/user').name;
+            return (this.userChanged ||
+                this.fetch('/api/hello/user').name);
         }
         set user(name) {
             this.userChanged = name;
         }
         save() {
+            const { userChanged } = this;
             this.fetch('/api/hello/user', {
                 method: 'PUT',
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ name: userChanged })
             });
             this.userChanged = undefined;
         }
@@ -42633,14 +42649,14 @@
             };
         }
         render() {
-            const { _: { helloModel }, props: { id } } = this;
+            const { _: { helloModel: { user, setUser, save } }, props: { id } } = this;
             return (react_12("div", { id: id },
                 react_12("p", { id: `${id}-message` },
                     "Hello, ",
-                    helloModel.user,
+                    user,
                     "!"),
-                react_12("input", { id: `${id}-input`, value: helloModel.user, onChange: helloModel.setUser.bind(helloModel) }),
-                react_12("button", { id: `${id}-save`, onClick: helloModel.save.bind(helloModel) }, "Save")));
+                react_12("input", { id: `${id}-input`, value: user, onChange: setUser }),
+                react_12("button", { id: `${id}-save`, onClick: save }, "Save")));
         }
     };
     Hello = __decorate([
