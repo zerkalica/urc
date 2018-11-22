@@ -8,6 +8,8 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
 
         constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
         super()
+        this.$ = {...this.$, $mol_conform(a, b) { return a} }
+
         this[Symbol.toStringTag] = id
         this.calculate = this.calc
         // Each react component atom - autorunned separate unit.
