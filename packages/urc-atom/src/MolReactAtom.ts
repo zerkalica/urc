@@ -3,13 +3,20 @@ import $ from 'mol_atom2_all'
 const Atom = $.$mol_atom2
 const Fiber = $.$mol_fiber
 
+function $mol_conform(a, b) { return a }
+
+const new$ = Object.create(Atom.$)
+new$.$mol_conform = $mol_conform
+
 export class MolReactAtom<ReactNode> extends Atom<ReactNode>
     implements IReactAtom<ReactNode> {
-
+        /**
+         * Disable $mol_conform in context. Do not need to reconcile vdom node.
+         * Some fields in node are read only, $mol_conform impact perfomance.
+         */
+        static $ = new$
         constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
         super()
-        this.$ = {...this.$, $mol_conform(a, b) { return a} }
-
         this[Symbol.toStringTag] = id
         this.calculate = this.calc
         // Each react component atom - autorunned separate unit.
@@ -20,11 +27,13 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
     protected propsChanged = true
 
     /**
-     * Called on componentDidUpdate.
+     * Called on componentDidUpdate. Used to detect if props or react component state changed.
      * Obsolete fiber and set propsChanged flag to prevent running forceUpdate
      * in last (after componentdidUpdate) render call.
      */
     reset(): void {
+        // forceUpdate calls componentDidUpdate
+        if (this.inForceUpdate) return
         this.cursor = $.$mol_fiber_status.obsolete
         this.propsChanged = true
     }
@@ -42,7 +51,7 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
         try {
             // forceUpdate can call render and get atom value again. If error - ignore it already stored in atom.
 
-            // Nulling Fiber.current needed, atom value can access slave.master and obey to itself
+            // Nulling Fiber.current, atom value can access slave.master and obey to itself
             Fiber.current = null
             this.inForceUpdate = true
             this.reactHost.forceUpdate()
