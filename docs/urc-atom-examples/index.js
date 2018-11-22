@@ -23891,13 +23891,15 @@
 
     const Atom = $$1.$mol_atom2;
     const Fiber = $$1.$mol_fiber;
+    function $mol_conform(a, b) { return a; }
+    const new$ = Object.create(Atom.$);
+    new$.$mol_conform = $mol_conform;
     class MolReactAtom extends Atom {
         constructor(id, reactHost) {
             super();
             this.reactHost = reactHost;
             this.propsChanged = true;
             this.inForceUpdate = false;
-            this.$ = Object.assign({}, this.$, { $mol_conform(a, b) { return a; } });
             this[Symbol.toStringTag] = id;
             this.calculate = this.calc;
             // Each react component atom - autorunned separate unit.
@@ -23905,11 +23907,14 @@
             this.doubt_slaves = this.schedule;
         }
         /**
-         * Called on componentDidUpdate.
+         * Called on componentDidUpdate. Used to detect if props or react component state changed.
          * Obsolete fiber and set propsChanged flag to prevent running forceUpdate
          * in last (after componentdidUpdate) render call.
          */
         reset() {
+            // forceUpdate calls componentDidUpdate
+            if (this.inForceUpdate)
+                return;
             this.cursor = 0 /* obsolete */;
             this.propsChanged = true;
         }
@@ -23924,7 +23929,7 @@
                 return value;
             try {
                 // forceUpdate can call render and get atom value again. If error - ignore it already stored in atom.
-                // Nulling Fiber.current needed, atom value can access slave.master and obey to itself
+                // Nulling Fiber.current, atom value can access slave.master and obey to itself
                 Fiber.current = null;
                 this.inForceUpdate = true;
                 this.reactHost.forceUpdate();
@@ -23951,6 +23956,11 @@
             return this.forceUpdate(super.wait(promise));
         }
     }
+    /**
+     * Disable $mol_conform in context. Do not need to reconcile vdom node.
+     * Some fields in node are read only, $mol_conform impact perfomance.
+     */
+    MolReactAtom.$ = new$;
 
     function createDecorator$1(BaseComponent, renderError) {
         return createDecorator(MolReactAtom, BaseComponent, renderError);
