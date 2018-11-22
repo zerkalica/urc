@@ -5,6 +5,12 @@ const Fiber = $.$mol_fiber
 
 function $mol_conform(a, b) { return a }
 
+export const enum MolAtomStatus {
+    READY = 0,
+    PROPS_CHANGED = 1,
+    FORCE_UPDATE = 2,
+}
+
 const new$ = Object.create(Atom.$)
 new$.$mol_conform = $mol_conform
 
@@ -24,7 +30,7 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
         this.doubt_slaves = this.schedule
     }
 
-    protected propsChanged = true
+    protected status: MolAtomStatus = MolAtomStatus.PROPS_CHANGED
 
     /**
      * Called on componentDidUpdate. Used to detect if props or react component state changed.
@@ -32,39 +38,43 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
      * in last (after componentdidUpdate) render call.
      */
     reset(): void {
-        // forceUpdate calls componentDidUpdate
-        if (this.inForceUpdate) return
+        // forceUpdate can call componentDidUpdate - this is not props or state changes, exiting.
+        if (this.status === MolAtomStatus.FORCE_UPDATE) return
         this.cursor = $.$mol_fiber_status.obsolete
-        this.propsChanged = true
+        this.status = MolAtomStatus.PROPS_CHANGED
     }
 
     calc(): ReactNode {
         return this.reactHost.__value()
     }
 
-    protected inForceUpdate: boolean = false
     protected forceUpdate<V>(value: V): V {
-        const {propsChanged} = this
-        this.propsChanged = false
-        // if changed via componentDidUpdate do not run forceUpdate
-        if (propsChanged) return value
-        try {
-            // forceUpdate can call render and get atom value again. If error - ignore it already stored in atom.
+        // if changed via props/state do not run forceUpdate
+        if (this.status === MolAtomStatus.PROPS_CHANGED) {
+            this.status = MolAtomStatus.READY
+            return value
+        }
 
-            // Nulling Fiber.current, atom value can access slave.master and obey to itself
-            Fiber.current = null
-            this.inForceUpdate = true
+        try {
+            this.status = MolAtomStatus.FORCE_UPDATE
+            // forceUpdate can call render on any component. Disable slave -> master relations.
+            Fiber.current = undefined
             this.reactHost.forceUpdate()
         } catch (error) {
             if (!this.error) super.fail(error)
         }
-        this.inForceUpdate = false
+        this.status = MolAtomStatus.READY
 
         return value
     }
 
     get() {
-        if (this.inForceUpdate && this.error) throw this.error
+        // After atom actualization forceUpdate can call render on itself. Just return state.
+        if (this.status === MolAtomStatus.FORCE_UPDATE) {
+            if (this.error) throw this.error
+
+            return this.value
+        }
 
         return super.get()
     }
