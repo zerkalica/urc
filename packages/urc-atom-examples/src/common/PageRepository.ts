@@ -41,7 +41,7 @@ export class PageRepository<Page extends BasePage> {
         this.page = this.pages.find(page => page.id === id)
     }
 
-    @action getPageUrl(page: string): string {
+    getPageUrl(page: string): string {
         return this._.locationStore.toUrl({page})
     }
 

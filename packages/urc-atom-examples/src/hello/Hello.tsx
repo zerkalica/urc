@@ -22,7 +22,10 @@ class HelloModel {
 
     @mem
     get user(): string {
-        return this.userChanged || (this.fetch('/api/hello/user') as {name: string}).name
+        return (
+            this.userChanged ||
+            (this.fetch('/api/hello/user') as {name: string}).name
+        )
     }
 
     set user(name: string) {
@@ -31,9 +34,10 @@ class HelloModel {
 
     @action
     save() {
+        const {userChanged} = this
         this.fetch('/api/hello/user', {
             method: 'PUT',
-            body: JSON.stringify({name})
+            body: JSON.stringify({name: userChanged})
         })
         this.userChanged = undefined
     }
@@ -60,22 +64,17 @@ export class Hello extends React.PureComponent<HelloProps> {
 
     render() {
         const {
-            _: {helloModel},
+            _: {
+                helloModel: {user, setUser, save}
+            },
             props: {id}
         } = this
 
         return (
             <div id={id}>
-                <p id={`${id}-message`}>Hello, {helloModel.user}!</p>
-                <input
-                    id={`${id}-input`}
-                    value={helloModel.user}
-                    onChange={helloModel.setUser.bind(helloModel)}
-                />
-                <button
-                    id={`${id}-save`}
-                    onClick={helloModel.save.bind(helloModel)}
-                >
+                <p id={`${id}-message`}>Hello, {user}!</p>
+                <input id={`${id}-input`} value={user} onChange={setUser} />
+                <button id={`${id}-save`} onClick={save}>
                     Save
                 </button>
             </div>
