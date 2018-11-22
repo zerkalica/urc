@@ -10,7 +10,7 @@ export function helloMocks(rawStorage: Storage) {
     return [
         {
             method: 'GET',
-            matcher: new RegExp('/api/hello/user'),
+            matcher: new RegExp('^/api/hello/user$'),
             response(url: string, params: RequestInit) {
                 return {name: storage.get()}
             }

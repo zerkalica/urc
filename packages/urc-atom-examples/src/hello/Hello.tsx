@@ -18,7 +18,7 @@ class HelloModel {
         this.fetch = _.fetch
     }
 
-    @mem userChanged: string | void = undefined
+    @mem userChanged: string | void
 
     @mem
     get user(): string {

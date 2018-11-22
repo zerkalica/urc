@@ -42,14 +42,14 @@ export function todoMocks(rawStorage: Storage) {
     return [
         {
             method: 'GET',
-            matcher: new RegExp('/api/todos'),
+            matcher: new RegExp('^/api/todos$'),
             response(url: string, params: RequestInit) {
                 return todoStorage.get().sort(sortByDate)
             }
         },
         {
             method: 'PUT',
-            matcher: new RegExp('/api/todos'),
+            matcher: new RegExp('^/api/todos$'),
             response(url: string, params: RequestInit) {
                 const updates: Map<string, Partial<ITodo>> = new Map(getBody(params.body))
                 const newTodos = todoStorage.get()
@@ -64,7 +64,7 @@ export function todoMocks(rawStorage: Storage) {
         },
         {
             method: 'DELETE',
-            matcher: new RegExp('/api/todos'),
+            matcher: new RegExp('^/api/todos$'),
             response(url: string, params: RequestInit) {
                 const ids: string[] = getBody(params.body)
                 const newTodos = todoStorage.get().filter(todo =>
@@ -77,7 +77,7 @@ export function todoMocks(rawStorage: Storage) {
         },
         {
             method: 'DELETE',
-            matcher: new RegExp('/api/todo/(.*)'),
+            matcher: new RegExp('^/api/todo/(.*)$'),
             response(url: string, params: RequestInit, id: string) {
                 const newTodos = todoStorage.get().filter(todo => todo.id !== id)
                 todoStorage.set(newTodos.sort(sortByDate))
@@ -87,7 +87,7 @@ export function todoMocks(rawStorage: Storage) {
         },
         {
             method: 'POST',
-            matcher: new RegExp('/api/todo/(.*)'),
+            matcher: new RegExp('^/api/todo/(.*)$'),
             response(url: string, params: RequestInit, id: string) {
                 const newTodo = getBody(params.body)
                 const newTodos = todoStorage.get().map(todo => (todo.id === id ? newTodo : todo))
@@ -98,7 +98,7 @@ export function todoMocks(rawStorage: Storage) {
         },
         {
             method: 'PUT',
-            matcher: new RegExp('/api/todo'),
+            matcher: new RegExp('^/api/todo$'),
             response(url: string, params: RequestInit) {
                 const body = getBody(params.body)
                 const id = uuid()
