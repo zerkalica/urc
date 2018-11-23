@@ -1,6 +1,6 @@
 {
   "name": "urc-atom",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "license": "MIT",
   "description": "Universal react connect - mol_atom2 adapter",
   "author": {
@@ -42,7 +42,7 @@
     "react-dom": "^16.6.3"
   },
   "dependencies": {
-    "urc": "^2.1.0",
-    "mol_atom2_all": "^1.3.9"
+    "mol_atom2_all": "^1.3.9",
+    "urc": "^2.2.0"
   }
 }

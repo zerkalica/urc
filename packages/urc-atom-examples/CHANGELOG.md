@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.2.0](https://github.com/zerkalica/urc-atom/compare/v2.1.0...v2.2.0) (2018-11-23)
+
+
+### Bug Fixes
+
+* **urc-atom-examples:** decorator ([a8d5367](https://github.com/zerkalica/urc-atom/commit/a8d5367))
+* conflicts ([a6d01e4](https://github.com/zerkalica/urc-atom/commit/a6d01e4))
+
+
+
+
+
 # [2.1.0](https://github.com/zerkalica/urc-atom/compare/v1.0.8...v2.1.0) (2018-11-22)
 
 
