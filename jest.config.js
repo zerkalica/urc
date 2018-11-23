@@ -1,7 +1,7 @@
 module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
   moduleNameMapper: {
-    "^(fibercell.*?)$": "<rootDir>/packages/$1/src"
+    "^(urc.*?)$": "<rootDir>/packages/$1/src"
   },
   rootDir: __dirname,
   testMatch: [

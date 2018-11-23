@@ -1,6 +1,6 @@
 {
   "name": "urc",
-  "description": "Universal react connect decorator builder",
+  "description": "Universal react connect decorator builder packages",
   "version": "2.0.0",
   "private": true,
   "scripts": {
@@ -31,7 +31,7 @@
     "lerna": "^3.4.3",
     "rollup": "^0.67.3",
     "rollup-plugin-typescript2": "^0.18.0",
-    "ts-jest": "^23.10.4",
+    "ts-jest": "^23.10.5",
     "typescript": "^3.1.6"
   },
   "dependencies": {

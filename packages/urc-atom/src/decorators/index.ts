@@ -3,10 +3,12 @@ const {
     $mol_fiber,
     $mol_fiber_sync,
     $mol_atom2_field,
-    $mol_atom2_dict
+    $mol_atom2_dict,
+    $mol_fail_hidden
 } = $
 export const dict = $mol_atom2_dict
 export const mem = $mol_atom2_field
+export const fail = $mol_fail_hidden
 
 export function action<Host, Value>(
     obj: Host,
