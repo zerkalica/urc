@@ -67,6 +67,7 @@ function createObserverComponent<
         ? BaseComponent
         : (OrigComponent as ComponentClass<ReactNode>)) {
         static displayName = displayName
+        static __urc = true
         props: Props
 
         __atom: IReactAtom<ReactNode>
