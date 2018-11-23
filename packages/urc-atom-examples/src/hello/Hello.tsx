@@ -18,14 +18,13 @@ class HelloModel {
         this.fetch = _.fetch
     }
 
-    @mem userChanged: string | void
+    @mem userChanged: string
 
     @mem
     get user(): string {
-        return (
-            this.userChanged ||
-            (this.fetch('/api/hello/user') as {name: string}).name
-        )
+        return this.userChanged === undefined
+            ? (this.fetch('/api/hello/user') as {name: string}).name
+            : this.userChanged as string
     }
 
     set user(name: string) {
