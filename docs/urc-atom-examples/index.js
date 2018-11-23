@@ -23006,6 +23006,7 @@
                 }
             },
             _a.displayName = displayName,
+            _a.__urc = true,
             _a);
         if (renderFunction) {
             const props = Object.getOwnPropertyNames(OrigComponent);
@@ -42622,8 +42623,9 @@
             this.fetch = _.fetch;
         }
         get user() {
-            return (this.userChanged ||
-                this.fetch('/api/hello/user').name);
+            return this.userChanged === undefined
+                ? this.fetch('/api/hello/user').name
+                : this.userChanged;
         }
         set user(name) {
             this.userChanged = name;
