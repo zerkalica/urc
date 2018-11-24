@@ -9,25 +9,50 @@ const {
 export const dict = $mol_atom2_dict
 export const mem = $mol_atom2_field
 export const fail = $mol_fail_hidden
+import {MolReactAtom} from '../MolReactAtom'
+
+export function action_sync<Host, Value>(
+    obj: Host,
+    name: string,
+    descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
+) {
+    return action(obj, name, descr, true)
+}
 
 export function action<Host, Value>(
     obj: Host,
     name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>
+    descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
+    sync?: boolean
 ) {
     const calculate = descr.value
 
-    function $mol_fiber_action_wrapper(slave: $.$mol_atom2 | void, ...args: any[]) {
+    function $mol_fiber_action_wrapper(current: $.$mol_atom2 | void, ...args: any[]) {
         const master = new $mol_fiber()
         
         master.calculate = calculate.bind(this, ...args)
         master[Symbol.toStringTag] = `${this}.${name}()`
- 
-        return master.get()
+
+        const slave: MolReactAtom<any> | void = sync && current instanceof MolReactAtom ? current : undefined
+
+        try {
+            if (slave !== undefined) slave.sync_begin()
+            return master.get()
+        } finally {
+            if (slave !== undefined) slave.sync_end()
+        }
     }
 
+    const binds: WeakMap<Object, (...args: any[]) => any> = new WeakMap()
+
     const get: () => ((...args: any[]) => any) = function() {
-        return $mol_fiber_action_wrapper.bind(this, $mol_fiber.current)
+        const current = $mol_fiber.current
+        let binded = binds.get(current)
+        if (binded === undefined) {
+            binded = $mol_fiber_action_wrapper.bind(this, current)
+            binds.set(current, binded)
+        }
+        return binded
     }
 
     return {

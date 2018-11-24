@@ -1,36 +1,51 @@
 import {IReactAtom, IReactHost} from 'urc'
 import $ from 'mol_atom2_all'
-const Atom = $.$mol_atom2
-const Fiber = $.$mol_fiber
+const $mol_atom = $.$mol_atom2
+const $mol_fiber = $.$mol_fiber
 
 function $mol_conform(a, b) { return a }
 
-export const enum MolAtomStatus {
-    READY = 0,
-    PROPS_CHANGED = 1,
-    FORCE_UPDATE = 2,
-}
-
-const new$ = Object.create(Atom.$)
+const new$ = Object.create($mol_atom.$)
 new$.$mol_conform = $mol_conform
 
-export class MolReactAtom<ReactNode> extends Atom<ReactNode>
-    implements IReactAtom<ReactNode> {
-        /**
-         * Disable $mol_conform in context. Do not need to reconcile vdom node.
-         * Some fields in node are read only, $mol_conform impact perfomance.
-         */
-        static $ = new$
-        constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
+export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IReactAtom<ReactNode> {
+
+    /**
+     * Disable $mol_conform in context. Do not need to reconcile vdom node.
+     * Some fields in node are read only, $mol_conform impact perfomance.
+     */
+    static $ = new$
+
+    constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
         super()
         this[Symbol.toStringTag] = id
         this.calculate = this.calc
-        // Each react component atom - autorunned separate unit.
-        this.obsolete_slaves = this.schedule
-        this.doubt_slaves = this.schedule
     }
 
-    protected status: MolAtomStatus = MolAtomStatus.PROPS_CHANGED
+    obsolete_slaves() {
+        this.schedule()
+    }
+
+    protected static transaction_count = 0
+
+    doubt_slaves() {
+        if (MolReactAtom.transaction_count) return
+        return this.schedule()
+    }
+
+    sync_begin() {
+        if (MolReactAtom.transaction_count++ > 0) return
+        $mol_fiber.deadline = Number.POSITIVE_INFINITY
+    }
+
+    sync_end() {
+        if (--MolReactAtom.transaction_count > 0) return
+
+        this.forceUpdate()
+        $mol_fiber.deadline = Date.now() + $mol_fiber.quant
+    }
+
+    protected rendering = false
 
     /**
      * Called on componentDidUpdate. Used to detect if props or react component state changed.
@@ -39,44 +54,42 @@ export class MolReactAtom<ReactNode> extends Atom<ReactNode>
      */
     reset(): void {
         // forceUpdate can call componentDidUpdate - this is not props or state changes, exiting.
-        if (this.status === MolAtomStatus.FORCE_UPDATE) return
+        if (this.rendering) return
         this.cursor = $.$mol_fiber_status.obsolete
-        this.status = MolAtomStatus.PROPS_CHANGED
     }
 
     calc(): ReactNode {
         return this.reactHost.__value()
     }
 
-    protected forceUpdate<V>(value: V): V {
+    protected forceUpdate<V>(value?: V): V {
         // if changed via props/state do not run forceUpdate
-        if (this.status === MolAtomStatus.PROPS_CHANGED) {
-            this.status = MolAtomStatus.READY
-            return value
-        }
+        if (this.rendering) return value
 
         try {
-            this.status = MolAtomStatus.FORCE_UPDATE
+            this.rendering = true
             // forceUpdate can call render on any component. Disable slave -> master relations.
-            Fiber.current = undefined
+            $mol_fiber.current = undefined
             this.reactHost.forceUpdate()
         } catch (error) {
             if (!this.error) super.fail(error)
         }
-        this.status = MolAtomStatus.READY
+        this.rendering = false
 
         return value
     }
 
-    get() {
-        // After atom actualization forceUpdate can call render on itself. Just return state.
-        if (this.status === MolAtomStatus.FORCE_UPDATE) {
+    render() {
+        if (this.rendering) {
             if (this.error) throw this.error
-
             return this.value
         }
-
-        return super.get()
+        this.rendering = true
+        try {
+            return this.get()
+        } finally {
+            this.rendering = false
+        }
     }
 
     push(next: ReactNode): ReactNode {
