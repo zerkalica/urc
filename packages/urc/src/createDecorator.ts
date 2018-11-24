@@ -111,8 +111,7 @@ function createObserverComponent<
         ): void {
             if (super.componentDidUpdate)
                 super.componentDidUpdate(prevProps, prevState, snapshot)
-            if (prevProps !== this.props || prevState !== this.state)
-                this.__atom.reset()
+            this.__atom.reset()
         }
 
         componentWillUnmount() {
@@ -123,12 +122,12 @@ function createObserverComponent<
         }
 
         render() {
-            if (this.__lastError === undefined) return this.__atom.get()
+            if (this.__lastError === undefined) return this.__atom.render()
 
             let data: ReactNode
             try {
                 if (this.__lastError) throw this.__lastError
-                data = this.__atom.get()
+                data = this.__atom.render()
                 this.__lastData = data
             } catch (error) {
                 this.__lastError = null

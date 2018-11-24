@@ -6,7 +6,7 @@ export interface IReactHost<ReactNode> {
 export interface IReactAtom<ReactNode = any> {
     reset(): void
     destructor(): void
-    get(): ReactNode
+    render(): ReactNode
 }
 
 export type IReactAtomClass<ReactNode = any> = new (
