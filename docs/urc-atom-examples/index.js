@@ -22973,8 +22973,7 @@
                 componentDidUpdate(prevProps, prevState, snapshot) {
                     if (super.componentDidUpdate)
                         super.componentDidUpdate(prevProps, prevState, snapshot);
-                    if (prevProps !== this.props || prevState !== this.state)
-                        this.__atom.reset();
+                    this.__atom.reset();
                 }
                 componentWillUnmount() {
                     if (super.componentWillUnmount)
@@ -22986,12 +22985,12 @@
                 }
                 render() {
                     if (this.__lastError === undefined)
-                        return this.__atom.get();
+                        return this.__atom.render();
                     let data;
                     try {
                         if (this.__lastError)
                             throw this.__lastError;
-                        data = this.__atom.get();
+                        data = this.__atom.render();
                         this.__lastData = data;
                     }
                     catch (error) {
@@ -23892,21 +23891,37 @@
     })($ || ($ = {}));
     var $$1 = $;
 
-    const Atom = $$1.$mol_atom2;
-    const Fiber = $$1.$mol_fiber;
+    const $mol_atom = $$1.$mol_atom2;
+    const $mol_fiber = $$1.$mol_fiber;
     function $mol_conform(a, b) { return a; }
-    const new$ = Object.create(Atom.$);
+    const new$ = Object.create($mol_atom.$);
     new$.$mol_conform = $mol_conform;
-    class MolReactAtom extends Atom {
+    class MolReactAtom extends $mol_atom {
         constructor(id, reactHost) {
             super();
             this.reactHost = reactHost;
-            this.status = 1 /* PROPS_CHANGED */;
+            this.rendering = false;
             this[Symbol.toStringTag] = id;
             this.calculate = this.calc;
-            // Each react component atom - autorunned separate unit.
-            this.obsolete_slaves = this.schedule;
-            this.doubt_slaves = this.schedule;
+        }
+        obsolete_slaves() {
+            this.schedule();
+        }
+        doubt_slaves() {
+            if (MolReactAtom.transaction_count)
+                return;
+            return this.schedule();
+        }
+        sync_begin() {
+            if (MolReactAtom.transaction_count++ > 0)
+                return;
+            $mol_fiber.deadline = Number.POSITIVE_INFINITY;
+        }
+        sync_end() {
+            if (--MolReactAtom.transaction_count > 0)
+                return;
+            this.forceUpdate();
+            $mol_fiber.deadline = Date.now() + $mol_fiber.quant;
         }
         /**
          * Called on componentDidUpdate. Used to detect if props or react component state changed.
@@ -23915,41 +23930,43 @@
          */
         reset() {
             // forceUpdate can call componentDidUpdate - this is not props or state changes, exiting.
-            if (this.status === 2 /* FORCE_UPDATE */)
+            if (this.rendering)
                 return;
             this.cursor = 0 /* obsolete */;
-            this.status = 1 /* PROPS_CHANGED */;
         }
         calc() {
             return this.reactHost.__value();
         }
         forceUpdate(value) {
             // if changed via props/state do not run forceUpdate
-            if (this.status === 1 /* PROPS_CHANGED */) {
-                this.status = 0 /* READY */;
+            if (this.rendering)
                 return value;
-            }
             try {
-                this.status = 2 /* FORCE_UPDATE */;
+                this.rendering = true;
                 // forceUpdate can call render on any component. Disable slave -> master relations.
-                Fiber.current = undefined;
+                $mol_fiber.current = undefined;
                 this.reactHost.forceUpdate();
             }
             catch (error) {
                 if (!this.error)
                     super.fail(error);
             }
-            this.status = 0 /* READY */;
+            this.rendering = false;
             return value;
         }
-        get() {
-            // After atom actualization forceUpdate can call render on itself. Just return state.
-            if (this.status === 2 /* FORCE_UPDATE */) {
+        render() {
+            if (this.rendering) {
                 if (this.error)
                     throw this.error;
                 return this.value;
             }
-            return super.get();
+            this.rendering = true;
+            try {
+                return this.get();
+            }
+            finally {
+                this.rendering = false;
+            }
         }
         push(next) {
             return this.forceUpdate(super.push(next));
@@ -23966,25 +23983,45 @@
      * Some fields in node are read only, $mol_conform impact perfomance.
      */
     MolReactAtom.$ = new$;
+    MolReactAtom.transaction_count = 0;
 
     function createDecorator$1(BaseComponent, renderError) {
         return createDecorator(MolReactAtom, BaseComponent, renderError);
     }
 
-    const { $mol_fiber, $mol_fiber_sync, $mol_atom2_field, $mol_atom2_dict, $mol_fail_hidden } = $$1;
+    const { $mol_fiber: $mol_fiber$1, $mol_fiber_sync, $mol_atom2_field, $mol_atom2_dict, $mol_fail_hidden } = $$1;
     const dict = $mol_atom2_dict;
     const mem = $mol_atom2_field;
     const fail = $mol_fail_hidden;
-    function action(obj, name, descr) {
+    function action_sync(obj, name, descr) {
+        return action(obj, name, descr, true);
+    }
+    function action(obj, name, descr, sync) {
         const calculate = descr.value;
-        function $mol_fiber_action_wrapper(slave, ...args) {
-            const master = new $mol_fiber();
+        function $mol_fiber_action_wrapper(current, ...args) {
+            const master = new $mol_fiber$1();
             master.calculate = calculate.bind(this, ...args);
             master[Symbol.toStringTag] = `${this}.${name}()`;
-            return master.get();
+            const slave = sync && current instanceof MolReactAtom ? current : undefined;
+            try {
+                if (slave !== undefined)
+                    slave.sync_begin();
+                return master.get();
+            }
+            finally {
+                if (slave !== undefined)
+                    slave.sync_end();
+            }
         }
+        const binds = new WeakMap();
         const get = function () {
-            return $mol_fiber_action_wrapper.bind(this, $mol_fiber.current);
+            const current = $mol_fiber$1.current;
+            let binded = binds.get(current);
+            if (binded === undefined) {
+                binded = $mol_fiber_action_wrapper.bind(this, current);
+                binds.set(current, binded);
+            }
+            return binded;
         };
         return {
             enumerable: descr.enumerable,
@@ -23999,7 +24036,7 @@
         return $mol_fiber_sync(function fiberizedFetch(url, init = {}) {
             const controller = new AbortController();
             init.signal = controller.signal;
-            $mol_fiber.current.abort = controller.abort.bind(controller);
+            $mol_fiber$1.current.abort = controller.abort.bind(controller);
             return fetchFn(url, init).then(normalize);
         });
     }
@@ -42662,7 +42699,7 @@
         action
     ], HelloModel.prototype, "save", null);
     __decorate([
-        action
+        action_sync
     ], HelloModel.prototype, "setUser", null);
     let Hello = class Hello extends react_4 {
         constructor() {
