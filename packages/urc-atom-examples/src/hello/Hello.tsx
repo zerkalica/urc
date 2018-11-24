@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {observer, Deps} from '../common'
-import {mem, action, fail} from 'urc-atom'
+import {mem, action, action_sync, fail} from 'urc-atom'
 
 class HelloModel {
     protected fetch: <V>(url: string, init?: RequestInit) => V
@@ -49,7 +49,7 @@ class HelloModel {
         this.userChanged = undefined
     }
 
-    @action
+    @action_sync
     setUser(e: React.ChangeEvent<any>) {
         this.user = e.target.value
     }
