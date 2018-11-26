@@ -23894,8 +23894,6 @@
     const $mol_atom = $$1.$mol_atom2;
     const $mol_fiber = $$1.$mol_fiber;
     function $mol_conform(a, b) { return a; }
-    const new$ = Object.create($mol_atom.$);
-    new$.$mol_conform = $mol_conform;
     class MolReactAtom extends $mol_atom {
         constructor(id, reactHost) {
             super();
@@ -23908,7 +23906,7 @@
             this.schedule();
         }
         doubt_slaves() {
-            if (MolReactAtom.transaction_count)
+            if (MolReactAtom.transaction_count > 0)
                 return;
             return this.schedule();
         }
@@ -23921,7 +23919,7 @@
             if (--MolReactAtom.transaction_count > 0)
                 return;
             this.forceUpdate();
-            $mol_fiber.deadline = Date.now() + $mol_fiber.quant;
+            $mol_fiber.deadline = 0;
         }
         /**
          * Called on componentDidUpdate. Used to detect if props or react component state changed.
@@ -23982,23 +23980,26 @@
      * Disable $mol_conform in context. Do not need to reconcile vdom node.
      * Some fields in node are read only, $mol_conform impact perfomance.
      */
-    MolReactAtom.$ = new$;
+    MolReactAtom.$ = $$1.$mol_ambient({ $mol_conform });
     MolReactAtom.transaction_count = 0;
 
     function createDecorator$1(BaseComponent, renderError) {
         return createDecorator(MolReactAtom, BaseComponent, renderError);
     }
 
-    const { $mol_fiber: $mol_fiber$1, $mol_fiber_sync, $mol_atom2_field, $mol_atom2_dict, $mol_fail_hidden } = $$1;
-    const dict = $mol_atom2_dict;
-    const mem = $mol_atom2_field;
-    const fail = $mol_fail_hidden;
+    const { $mol_fiber: $mol_fiber$1 } = $$1;
     function action_sync(obj, name, descr) {
-        return action(obj, name, descr, true);
+        return action_decorator(obj, name, descr, true);
     }
-    function action(obj, name, descr, sync) {
+    function action_defer(obj, name, descr) {
+        return action_decorator(obj, name, descr, false, true);
+    }
+    const frame = typeof requestAnimationFrame === 'undefined'
+        ? cb => setTimeout(cb, 0)
+        : requestAnimationFrame;
+    function action_decorator(obj, name, descr, sync, defered) {
         const calculate = descr.value;
-        function $mol_fiber_action_wrapper(current, ...args) {
+        function handler(current, ...args) {
             const master = new $mol_fiber$1();
             master.calculate = calculate.bind(this, ...args);
             master[Symbol.toStringTag] = `${this}.${name}()`;
@@ -24006,29 +24007,35 @@
             try {
                 if (slave !== undefined)
                     slave.sync_begin();
-                return master.get();
+                return defered ? frame(master.get.bind(master)) : master.get();
             }
             finally {
                 if (slave !== undefined)
                     slave.sync_end();
             }
         }
+        Object.defineProperty(handler, 'name', { value: `@action ${name}` });
         const binds = new WeakMap();
-        const get = function () {
+        function get() {
             const current = $mol_fiber$1.current;
             let binded = binds.get(current);
             if (binded === undefined) {
-                binded = $mol_fiber_action_wrapper.bind(this, current);
+                binded = handler.bind(this, current);
                 binds.set(current, binded);
             }
             return binded;
-        };
+        }
         return {
             enumerable: descr.enumerable,
             configurable: true,
             get,
         };
     }
+    action_decorator.defer = action_defer;
+    action_decorator.sync = action_sync;
+    const action = action_decorator;
+
+    const { $mol_fiber: $mol_fiber$2, $mol_fiber_sync } = $$1;
     /**
      * Add fiber cache to fetch-like function.
      */
@@ -24036,10 +24043,15 @@
         return $mol_fiber_sync(function fiberizedFetch(url, init = {}) {
             const controller = new AbortController();
             init.signal = controller.signal;
-            $mol_fiber$1.current.abort = controller.abort.bind(controller);
+            $mol_fiber$2.current.abort = controller.abort.bind(controller);
             return fetchFn(url, init).then(normalize);
         });
     }
+
+    const { $mol_atom2_field, $mol_atom2_dict, $mol_fail_hidden } = $$1;
+    const dict = $mol_atom2_dict;
+    const mem = $mol_atom2_field;
+    const fail = $mol_fail_hidden;
 
     class LocationStore {
         constructor(_, id, ns = 'app') {
@@ -42699,7 +42711,7 @@
         action
     ], HelloModel.prototype, "save", null);
     __decorate([
-        action_sync
+        action.sync
     ], HelloModel.prototype, "setUser", null);
     let Hello = class Hello extends react_4 {
         constructor() {
