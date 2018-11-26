@@ -2,11 +2,7 @@ import {IReactAtom, IReactHost} from 'urc'
 import $ from 'mol_atom2_all'
 const $mol_atom = $.$mol_atom2
 const $mol_fiber = $.$mol_fiber
-
 function $mol_conform(a, b) { return a }
-
-const new$ = Object.create($mol_atom.$)
-new$.$mol_conform = $mol_conform
 
 export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IReactAtom<ReactNode> {
 
@@ -14,7 +10,7 @@ export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IRe
      * Disable $mol_conform in context. Do not need to reconcile vdom node.
      * Some fields in node are read only, $mol_conform impact perfomance.
      */
-    static $ = new$
+    static $ = $.$mol_ambient({$mol_conform})
 
     constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
         super()
@@ -29,7 +25,7 @@ export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IRe
     protected static transaction_count = 0
 
     doubt_slaves() {
-        if (MolReactAtom.transaction_count) return
+        if (MolReactAtom.transaction_count > 0) return
         return this.schedule()
     }
 
@@ -42,7 +38,7 @@ export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IRe
         if (--MolReactAtom.transaction_count > 0) return
 
         this.forceUpdate()
-        $mol_fiber.deadline = Date.now() + $mol_fiber.quant
+        $mol_fiber.deadline = 0
     }
 
     protected rendering = false
