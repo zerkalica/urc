@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.3.0](https://github.com/zerkalica/urc/compare/v2.2.0...v2.3.0) (2018-11-26)
+
+
+### Bug Fixes
+
+* **urc-atom:** use ambient context, decompose actions ([8fc9269](https://github.com/zerkalica/urc/commit/8fc9269))
+
+
+### Features
+
+* **urc-atom:** action_sync to prevent input cursor jump to end ([4204e55](https://github.com/zerkalica/urc/commit/4204e55))
+
+
+
+
+
 # [2.2.0](https://github.com/zerkalica/urc/compare/v2.1.0...v2.2.0) (2018-11-23)
 
 

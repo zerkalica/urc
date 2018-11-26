@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.3.0](https://github.com/zerkalica/urc-atom/compare/v2.2.0...v2.3.0) (2018-11-26)
+
+
+### Bug Fixes
+
+* **urc-atom-examples:** input cursor jumps ([f04eb20](https://github.com/zerkalica/urc-atom/commit/f04eb20))
+* **urc-atom-examples:** new actions ([6934731](https://github.com/zerkalica/urc-atom/commit/6934731))
+
+
+
+
+
 # [2.2.0](https://github.com/zerkalica/urc-atom/compare/v2.1.0...v2.2.0) (2018-11-23)
 
 
