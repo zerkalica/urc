@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.4.0](https://github.com/zerkalica/urc/compare/v2.3.0...v2.4.0) (2019-02-28)
+
+
+### Features
+
+* actions and todomvc ([fc26d60](https://github.com/zerkalica/urc/commit/fc26d60))
+
+
+
+
+
 # [2.3.0](https://github.com/zerkalica/urc/compare/v2.2.0...v2.3.0) (2018-11-26)
 
 
