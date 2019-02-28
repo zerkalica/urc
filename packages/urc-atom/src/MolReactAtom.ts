@@ -1,10 +1,13 @@
 import {IReactAtom, IReactHost} from 'urc'
 import $ from 'mol_atom2_all'
-const $mol_atom = $.$mol_atom2
-const $mol_fiber = $.$mol_fiber
-function $mol_conform(a, b) { return a }
 
-export class MolReactAtom<ReactNode> extends $mol_atom<ReactNode> implements IReactAtom<ReactNode> {
+const {
+    $mol_fiber,
+} = $
+
+function $mol_conform<Target, Source>(a: Target, b: Source) { return a }
+
+export class MolReactAtom<ReactNode> extends $.$mol_atom2<ReactNode> implements IReactAtom<ReactNode> {
 
     /**
      * Disable $mol_conform in context. Do not need to reconcile vdom node.

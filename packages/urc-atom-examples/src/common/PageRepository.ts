@@ -11,26 +11,23 @@ export interface SetPageIdEvent {
     target: any
 }
 
-export interface PageRepositoryContext {
-    locationStore: LocationStore
-}
-
 export class PageRepository<Page extends BasePage> {
-    protected readonly pages: Page[]
-    protected readonly key: string
-    protected readonly _: PageRepositoryContext
-    protected id: string
+    readonly pages: Page[]
 
-    constructor(opts: {
-        id: string
-        pages: Page[]
-        key: string
-        _: PageRepositoryContext
-    }) {
-        this.id = opts.id
+    protected readonly key: string
+
+    constructor(
+        protected readonly _: {
+            locationStore: LocationStore
+        },
+        protected readonly id: string,
+        opts: {
+            pages: Page[]
+            key: string
+        }
+    ) {
         this.pages = opts.pages
         this.key = opts.key
-        this._ = opts._
     }
 
     toString() { return this.id }

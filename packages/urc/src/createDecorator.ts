@@ -85,7 +85,7 @@ function createObserverComponent<
             this.__atom = new ReactAtom(id, this as IReactHost<
                 ReactNode
             >)
-            this.__origRender = renderFunction || super.render
+            this.__origRender = renderFunction as (props?: Props) => ReactNode || super.render
             this.__lastError = undefined
             if (renderError) {
                 this.__lastData = undefined

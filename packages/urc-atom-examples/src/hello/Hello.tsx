@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {observer, Deps} from '../common'
-import {mem, action, fail} from 'urc-atom'
+import {mem, action, fail, Queue} from 'urc-atom'
 
 class HelloModel {
     protected fetch: <V>(url: string, init?: RequestInit) => V
@@ -18,6 +18,8 @@ class HelloModel {
         this.fetch = _.fetch
     }
 
+    protected actions = new Queue
+
     @mem userChanged: string
 
     @mem
@@ -31,22 +33,19 @@ class HelloModel {
         this.userChanged = name
     }
 
-    @mem saving: Promise<void> | Error | void
+    get saving(): PromiseLike<void> | Error | void {
+        return this.actions.locked
+    }
 
     @action
     save() {
-        const {userChanged} = this
-        try {
+        this.actions.run(() => {
             this.fetch('/api/hello/user', {
                 method: 'PUT',
-                body: JSON.stringify({name: userChanged})
+                body: JSON.stringify({name: this.userChanged})
             })
-        } catch (e) {
-            this.saving = e
-            fail(e)
-        }
-        this.saving = undefined
-        this.userChanged = undefined
+            this.userChanged = undefined
+        })
     }
 
     @action.sync
@@ -72,7 +71,7 @@ export class Hello extends React.PureComponent<HelloProps> {
     render() {
         const {
             _: {
-                helloModel: {user, setUser, save, saving}
+                helloModel: {userChanged, user, setUser, save, saving}
             },
             props: {id}
         } = this
@@ -84,7 +83,7 @@ export class Hello extends React.PureComponent<HelloProps> {
                 <button
                     id={`${id}-save`}
                     onClick={save}
-                    disabled={!!saving}
+                    disabled={!!saving || userChanged === undefined}
                 >
                     Save
                 </button>

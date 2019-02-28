@@ -18,8 +18,7 @@ apiMocker({
 const _: Deps<typeof App> = {
     fetchFn: fetch,
     location: window.location,
-    history: window.history
-    // storage: window.localStorage
+    history: window.history,
 }
 
 ReactDOM.render(

@@ -78,7 +78,7 @@ export interface AppProps {
         Deps<typeof LocationStore> &
             Deps<typeof TodoApp> &
             Deps<typeof Hello> & {fetchFn: typeof fetch},
-        'fetch'
+        'fetch' | 'locationStore'
     >
 }
 
@@ -93,36 +93,37 @@ export class App extends React.PureComponent<AppProps> {
         fetch: fiberize(this.props._.fetchFn, r => r.json())
     }
 
-    protected pageRepository = new PageRepository({
-        _: this._,
-        id: `${this.props.id}.pageRepository`,
-        pages: [
-            {
-                id: 'todomvc',
-                title: 'Todo MVC'
-            },
-            {
-                id: 'hello',
-                title: 'Hello'
-            }
-        ],
-        key: 'page'
-    })
+    protected pageRepository = new PageRepository(
+        this._,
+        `${this.props.id}.pageRepository`,
+        {
+            pages: [
+                {
+                    id: 'todomvc',
+                    title: 'Todo MVC'
+                },
+                {
+                    id: 'hello',
+                    title: 'Hello'
+                }
+            ],
+            key: 'page'
+        }
+    )
 
     render() {
         const {
             _,
-            pageRepository: {setPageId, getPageUrl: gpu, pages, page},
+            pageRepository,
             props: {id}
         } = this
-        const getPageUrl = gpu.bind(this.pageRepository)
-
+        const {page} = pageRepository
         const pageId = id + '-' + page.id
 
         return (
             <div id={id} className={css.main}>
                 <ul id={`${id}-menu`} className={css.menu}>
-                    {pages.map(item => (
+                    {pageRepository.pages.map(item => (
                         <li
                             id={`${id}-item(${item.id})`}
                             key={item.id}
@@ -130,14 +131,14 @@ export class App extends React.PureComponent<AppProps> {
                         >
                             <a
                                 id={`${id}-itemlink(${item.id})`}
-                                href={getPageUrl(item.id)}
+                                href={pageRepository.getPageUrl(item.id)}
                                 className={
                                     page === item
                                         ? css.menuButtonActive
                                         : css.menuButton
                                 }
                                 data-id={item.id}
-                                onClick={setPageId.bind(this.pageRepository)}
+                                onClick={pageRepository.setPageId}
                             >
                                 {item.title}
                             </a>
