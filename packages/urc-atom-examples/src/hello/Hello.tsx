@@ -18,8 +18,6 @@ class HelloModel {
         this.fetch = _.fetch
     }
 
-    protected actions = new Queue
-
     @mem userChanged: string
 
     @mem
@@ -32,6 +30,8 @@ class HelloModel {
     set user(name: string) {
         this.userChanged = name
     }
+
+    protected actions = new Queue
 
     get saving(): PromiseLike<void> | Error | void {
         return this.actions.locked
@@ -82,7 +82,7 @@ export class Hello extends React.PureComponent<HelloProps> {
                 <input id={`${id}-input`} value={user} onChange={setUser} disabled={!!saving} />
                 <button
                     id={`${id}-save`}
-                    onClick={save}
+                    onClick={save.bind(this._.helloModel)}
                     disabled={!!saving || userChanged === undefined}
                 >
                     Save
