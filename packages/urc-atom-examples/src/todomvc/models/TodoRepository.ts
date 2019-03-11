@@ -21,18 +21,23 @@ export class TodoRepository implements ITodoRepository {
 
     toString() { return this.id }
 
+    @mem clientTodos: Todo[] | void = undefined
     @mem get todos(): Todo[] {
-        const todos = (this._.fetch('/api/todos') as Partial<Todo>[])
+        const todos = this.clientTodos || ( (this._.fetch('/api/todos') as Partial<Todo>[])
             .map(data => new Todo({
                 ...data,
                 created: new Date(data.created),
                 _: {todoRepository: this},
             }))
+        )
 
         return todos
     }
 
-    set todos(data: Todo[]) {}
+
+    set todos(data: Todo[]) {
+        this.clientTodos = data
+    }
 
     get filter(): TODO_FILTER {
         return this._.locationStore.values['todo_filter'] as TODO_FILTER || TODO_FILTER.ALL
@@ -42,7 +47,7 @@ export class TodoRepository implements ITodoRepository {
         this._.locationStore.values['todo_filter'] = filter
     }
 
-    @mem get filteredTodos(): Todo[] {
+    get filteredTodos(): Todo[] {
         const todos = this.todos
         switch (this.filter) {
             case TODO_FILTER.ALL:

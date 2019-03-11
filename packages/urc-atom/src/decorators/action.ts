@@ -1,54 +1,51 @@
 import $ from 'mol_atom2_all'
-const {
-    $mol_fiber
-} = $
+const {$mol_fiber} = $
 
 import {MolReactAtom} from '../MolReactAtom'
 
 function action_sync<Host, Value>(
     obj: Host,
     name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
+    descr: TypedPropertyDescriptor<(...args: any[]) => Value>
 ) {
     return action_decorator(obj, name, descr, true)
 }
 
-function action_defer<Host, Value>(
-    obj: Host,
-    name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
-) {
-    return action_decorator(obj, name, descr, false, true)
-}
-
 type ActionMethod = (...args: any[]) => any
-
-const frame: (cb: ActionMethod) => any = typeof requestAnimationFrame === 'undefined'
-    ? cb => setTimeout(cb, 0)
-    : requestAnimationFrame
 
 function action_decorator<Host, Value>(
     obj: Host,
     name: string,
     descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
     sync?: boolean,
-    defered?: boolean
 ) {
     const calculate = descr.value
 
     function handler(current: $.$mol_atom2 | void, ...args: any[]) {
         const master = new $mol_fiber()
-        
         master.calculate = calculate.bind(this, ...args)
         master[Symbol.toStringTag] = `${this}.${name}()`
 
-        const slave: MolReactAtom<any> | void = sync && current instanceof MolReactAtom ? current : undefined
+        const prev = $mol_fiber.current
+        const slave: MolReactAtom<any> | void =
+            sync && current instanceof MolReactAtom ? current : undefined
+
+        // Run action in separate isolated fiber
+        $mol_fiber.current = null
 
         try {
-            if (slave !== undefined) slave.sync_begin()
-            return defered ? frame(master.get.bind(master)) : master.get()
+            if (slave) {
+                slave.sync_begin()
+                master.get()
+            } else {
+                // @see https://medium.com/trabe/react-syntheticevent-reuse-889cd52981b6
+                const event = args[0]
+                if (event && event instanceof Object && typeof event.persist === 'function') event.persist()
+                master.schedule()
+            }
         } finally {
-            if (slave !== undefined) slave.sync_end()
+            if (slave) slave.sync_end()
+            $mol_fiber.current = prev
         }
     }
     Object.defineProperty(handler, 'name', {value: `@action ${name}`})
@@ -68,11 +65,11 @@ function action_decorator<Host, Value>(
     return {
         enumerable: descr.enumerable,
         configurable: true,
-        get,
+        get
     }
 }
 
-action_decorator.defer = action_defer
+action_decorator.defer = action_decorator
 action_decorator.sync = action_sync
 
 type Class<Target> = Object
@@ -83,7 +80,7 @@ export interface Action {
         name: string,
         descr: TypedPropertyDescriptor<Method>
     ): TypedPropertyDescriptor<Method>
-    defer: typeof action_defer
+    defer: Action
     sync: typeof action_sync
 }
 

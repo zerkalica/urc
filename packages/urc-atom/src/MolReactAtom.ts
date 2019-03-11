@@ -25,23 +25,24 @@ export class MolReactAtom<ReactNode> extends $.$mol_atom2<ReactNode> implements 
         this.schedule()
     }
 
-    protected static transaction_count = 0
+    protected static synced: MolReactAtom<any> = undefined
 
     doubt_slaves() {
-        if (MolReactAtom.transaction_count > 0) return
+        if (MolReactAtom.synced === this) return
         return this.schedule()
     }
 
     sync_begin() {
-        if (MolReactAtom.transaction_count++ > 0) return
+        if (MolReactAtom.synced) return
         $mol_fiber.deadline = Number.POSITIVE_INFINITY
+        MolReactAtom.synced = this
     }
 
     sync_end() {
-        if (--MolReactAtom.transaction_count > 0) return
-
-        this.forceUpdate()
+        if (MolReactAtom.synced !== this) return
         $mol_fiber.deadline = 0
+        MolReactAtom.synced = undefined
+        this.forceUpdate()
     }
 
     protected rendering = false

@@ -21,9 +21,12 @@ class TodoToAdd {
         this.title = ''
     }
 
-    @action.defer
+    protected oldRef: HTMLInputElement | void
+
+    @action
     setRef(ref: HTMLInputElement | void) {
-        if (ref) ref.focus()
+        if (ref && ref !== this.oldRef) ref.focus()
+        this.oldRef = ref
     }
 
     @action.sync
