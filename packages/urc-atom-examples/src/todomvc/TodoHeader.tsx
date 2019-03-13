@@ -21,12 +21,9 @@ class TodoToAdd {
         this.title = ''
     }
 
-    protected oldRef: HTMLInputElement | void
-
-    @action
+    @action.defer
     setRef(ref: HTMLInputElement | void) {
-        if (ref && ref !== this.oldRef) ref.focus()
-        this.oldRef = ref
+        if (ref) ref.focus()
     }
 
     @action.sync
@@ -119,6 +116,7 @@ export class TodoHeader extends React.PureComponent<TodoHeaderProps> {
                     className={css.newTodo}
                     placeholder="What needs to be done?"
                     onInput={todoToAdd.setTitle}
+                    onChange={() => {}}
                     ref={todoToAdd.setRef}
                     value={todoToAdd.title}
                     onKeyDown={todoToAdd.submit}

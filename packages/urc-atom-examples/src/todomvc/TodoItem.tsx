@@ -28,7 +28,7 @@ class TodoItemEdit {
         this.editText = todo.title
     }
 
-    @action
+    @action.sync
     setText({target}: React.KeyboardEvent<HTMLInputElement>) {
         this.editText = (target as any).value.trim()
     }

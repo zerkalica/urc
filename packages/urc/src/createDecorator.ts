@@ -15,11 +15,6 @@ type ErrorInfo = any
 export interface Component<Props, State, ReactNode> {
     props: Props
     state: State
-    componentDidUpdate?(
-        prevProps: Readonly<Props>,
-        prevState: Readonly<State>,
-        snapshot?: any
-    ): void
     forceUpdate(): void
     componentDidCatch?(error: Error, errorInfo: ErrorInfo): void
     componentWillUnmount?(): void
@@ -35,6 +30,50 @@ function isFunctionComponent<Props, ReactNode>(
         !OrigComponent.prototype ||
         typeof OrigComponent.prototype.render !== 'function'
     )
+}
+
+function reset_props<
+    Host extends object = any,
+    Field extends keyof Host = any,
+    Value extends Host[Field] = any
+>(
+    proto: Host,
+    name: Field,
+    descr?: TypedPropertyDescriptor<Value>
+): any {
+    return {
+        configurable: true,
+        enumerable: true,
+        get(): Value {
+            return this.__props
+        },
+        set(v: Value) {
+            if (v !== this.__props && this.__atom !== undefined) this.__atom.reset()
+            this.__props = v
+        }
+    }
+}
+
+function reset_state<
+    Host extends object = any,
+    Field extends keyof Host = any,
+    Value extends Host[Field] = any
+>(
+    proto: Host,
+    name: Field,
+    descr?: TypedPropertyDescriptor<Value>
+): any {
+    return {
+        configurable: true,
+        enumerable: true,
+        get(): Value {
+            return this.__state
+        },
+        set(v: Value) {
+            if (v !== this.__state && this.__atom !== undefined) this.__atom.reset()
+            this.__state = v
+        }
+    }
 }
 
 export type ComponentDecorator<ReactNode> =
@@ -63,12 +102,17 @@ function createObserverComponent<
         (OrigComponent as {displayName?: string}).displayName ||
         OrigComponent.name
 
-    const Cls = class<Props, State> extends (renderFunction
+    class Cls<Props, State> extends (renderFunction
         ? BaseComponent
         : (OrigComponent as ComponentClass<ReactNode>)) {
         static displayName = displayName
         static __urc = true
-        props: Props
+
+        protected __props: Props
+        @reset_props props: Props
+
+        protected __state: State
+        @reset_state state: State
 
         __atom: IReactAtom<ReactNode>
         __origRender: (props?: Props) => ReactNode
@@ -102,16 +146,6 @@ function createObserverComponent<
             if (this.__lastError === undefined) return
             this.__lastError = error
             this.forceUpdate()
-        }
-
-        componentDidUpdate(
-            prevProps: Readonly<Props>,
-            prevState: Readonly<State>,
-            snapshot?: any
-        ): void {
-            if (super.componentDidUpdate)
-                super.componentDidUpdate(prevProps, prevState, snapshot)
-            this.__atom.reset()
         }
 
         componentWillUnmount() {

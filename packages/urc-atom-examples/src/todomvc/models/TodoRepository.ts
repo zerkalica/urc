@@ -21,7 +21,7 @@ export class TodoRepository implements ITodoRepository {
 
     toString() { return this.id }
 
-    @mem clientTodos: Todo[] | void = undefined
+    @mem clientTodos: Todo[] | void // = undefined
     @mem get todos(): Todo[] {
         const todos = this.clientTodos || ( (this._.fetch('/api/todos') as Partial<Todo>[])
             .map(data => new Todo({
@@ -104,6 +104,7 @@ export class TodoRepository implements ITodoRepository {
     @action update(todo: Todo) {
         const newTodos = this.todos.map(t => t.id === todo.id ? todo : t)
         this.todos = newTodos
+        return
         this.actions.run(() => {
             this._.fetch(`/api/todo/${todo.id}`, {
                 method: 'POST',

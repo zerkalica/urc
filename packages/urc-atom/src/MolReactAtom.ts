@@ -9,12 +9,6 @@ function $mol_conform<Target, Source>(a: Target, b: Source) { return a }
 
 export class MolReactAtom<ReactNode> extends $.$mol_atom2<ReactNode> implements IReactAtom<ReactNode> {
 
-    /**
-     * Disable $mol_conform in context. Do not need to reconcile vdom node.
-     * Some fields in node are read only, $mol_conform impact perfomance.
-     */
-    static $ = $.$mol_ambient({$mol_conform})
-
     constructor(id: string, protected reactHost: IReactHost<ReactNode>) {
         super()
         this[Symbol.toStringTag] = id
@@ -104,3 +98,11 @@ export class MolReactAtom<ReactNode> extends $.$mol_atom2<ReactNode> implements 
         return this.forceUpdate(super.wait(promise))
     }
 }
+
+/**
+ * Disable $mol_conform in context. Do not need to reconcile vdom node.
+ * Some fields in node are read only, $mol_conform impact perfomance.
+ * 
+ * If instance of vdom node is not changed - react do not refresh children.
+ */
+MolReactAtom.prototype.$ = $.$mol_ambient({$mol_conform})

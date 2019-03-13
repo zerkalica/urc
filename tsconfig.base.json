@@ -1,4 +1,5 @@
 {
+        "strictNullCheck": true,
 	"compilerOptions": {
 		"newLine": "LF",
 		"module": "esnext",
