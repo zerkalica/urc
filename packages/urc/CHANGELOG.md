@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.4.2](https://github.com/zerkalica/urc/compare/v2.4.1...v2.4.2) (2019-03-13)
+
+
+### Bug Fixes
+
+* actions and props based cache reset ([c204370](https://github.com/zerkalica/urc/commit/c204370))
+
+
+
+
+
 # [2.4.0](https://github.com/zerkalica/urc/compare/v2.3.0...v2.4.0) (2019-02-28)
 
 
