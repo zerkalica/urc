@@ -21,7 +21,7 @@ class TodoToAdd {
         this.title = ''
     }
 
-    @action.defer
+    @action
     setRef(ref: HTMLInputElement | void) {
         if (ref) ref.focus()
     }
@@ -31,12 +31,13 @@ class TodoToAdd {
         this.title = target.value
     }
 
-    @action
-    submit(e: React.KeyboardEvent<HTMLInputElement>) {
-        if (e.keyCode === 13 && this.title) {
+    @action.event
+    submit({keyCode}: React.KeyboardEvent<HTMLInputElement>) {
+        action(() => {
+            if (keyCode !== 13 || !this.title) return
             this._.todoRepository.create({title: this.title})
             this.title = ''
-        }
+        })
     }
 }
 

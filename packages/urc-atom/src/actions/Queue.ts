@@ -1,4 +1,4 @@
-import {mem, fail} from '../decorators'
+import {mem, fail, defer} from '../decorators'
 
 import $ from 'mol_atom2_all'
 
@@ -54,7 +54,7 @@ export class Queue extends $.$mol_object2 implements Refreshable {
 
         // Recreate completed fiber if refresh called from error
         this.tasks[0] = createFiber(this.tasks[0].calculate)
-        $.$mol_fiber_defer(this._processing)
+        defer(this._processing)
     }
 
     processing(): void {

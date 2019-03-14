@@ -2,19 +2,20 @@ import $ from 'mol_atom2_all'
 const {$mol_fiber} = $
 
 import {MolReactAtom} from '../MolReactAtom'
+import { defer } from './reexports';
 
-function action_sync<Host, Value>(
+function action_sync<Host>(
     obj: Host,
     name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>
+    descr: TypedPropertyDescriptor<(...args: any[]) => void>
 ) {
     return action_decorator(obj, name, descr, true)
 }
 
-function action_defer<Host, Value>(
+function action_event<Host>(
     obj: Host,
     name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>
+    descr: TypedPropertyDescriptor<(...args: any[]) => void>
 ) {
     return action_decorator(obj, name, descr, false, true)
 }
@@ -24,48 +25,37 @@ interface ActionMethod {
     t?: object | void
 }
 
-function action_decorator<Host, Value>(
-    obj: Host,
+function action_decorator<Host>(
+    obj: Host | (() => void),
     name: string,
-    descr: TypedPropertyDescriptor<(...args: any[]) => Value>,
+    descr: TypedPropertyDescriptor<(...args: any[]) => void>,
     sync?: boolean,
-    defered?: boolean
+    event?: boolean
 ) {
+    if (typeof obj === 'function') {
+        return defer(obj as (() => void))
+    }
     const calculate = descr.value
 
     function handler(slave: MolReactAtom<any> | void, ...args: any[]) {
-        const master = new $mol_fiber()
-        master.calculate = calculate.bind(this, ...args)
-        master[Symbol.toStringTag] = `${this}.${name}()`
-
-        try {
-            if (slave) {
+        if (slave) {
+            try {
                 slave.sync_begin()
-                master.get()
-            } else {
-                // @see https://medium.com/trabe/react-syntheticevent-reuse-889cd52981b6
-                const event = args[0]
-                // To prevent react warning - persist event
-                // Event may be called in next fiber tick
-                if (
-                    event &&
-                    event instanceof Object &&
-                    typeof event.persist === 'function'
-                )
-                    event.persist()
-
-                if ($mol_fiber.current) {
-                    // if action called from fiber - wait
-                    master.get()
-                } else {
-                    // if action called from event - fork
-                    master.schedule()
-                }
+                calculate.call(this, ...args)
+            } finally {
+                slave.sync_end()
             }
-        } finally {
-            if (slave) slave.sync_end()
+        } else if (event) {
+            calculate.call(this, ...args)
+        } else {
+            const master = new $mol_fiber()
+            master.calculate = calculate.bind(this, ...args)
+            master[Symbol.toStringTag] = `${this}.${name}()`
+            if ($mol_fiber.current) master.get()
+            else master.schedule()
         }
     }
+
     Object.defineProperty(handler, 'name', {value: `@action ${name}`})
 
     const binds: WeakMap<Object, ActionMethod> = new WeakMap()
@@ -96,7 +86,7 @@ function action_decorator<Host, Value>(
     }
 }
 
-action_decorator.defer = action_defer
+action_decorator.event = action_event
 action_decorator.sync = action_sync
 
 type Class<Target> = Object
@@ -107,7 +97,8 @@ export interface Action {
         name: string,
         descr: TypedPropertyDescriptor<Method>
     ): TypedPropertyDescriptor<Method>
-    defer: typeof action_defer
+    (fn: () => void): void
+    event: typeof action_event
     sync: typeof action_sync
 }
 

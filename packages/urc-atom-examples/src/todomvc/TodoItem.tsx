@@ -1,4 +1,4 @@
-import {action, mem} from 'urc-atom'
+import {action, mem, defer} from 'urc-atom'
 import {Todo} from './models'
 import {observer, sheet, Sheet, style} from '../common'
 import * as React from 'react'
@@ -33,7 +33,7 @@ class TodoItemEdit {
         this.editText = (target as any).value.trim()
     }
 
-    @action.defer
+    @action
     setEditInputRef(el: HTMLInputElement | void) {
         if (el) el.focus()
     }
@@ -54,21 +54,23 @@ class TodoItemEdit {
         this.todoBeingEditedId = null
     }
 
-    @action
-    submitOrRestore(event: React.KeyboardEvent<HTMLInputElement>) {
-        switch (event.which) {
-            case ESCAPE_KEY:
-                this.editText = this.todo.title
-                this.todoBeingEditedId = null
-                break
-
-            case ENTER_KEY:
-                this.submit()
-                break
-
-            default:
-                break
-        }
+    @action.event
+    submitOrRestore({which}: React.KeyboardEvent<HTMLInputElement>) {
+        action(() => {
+            switch (which) {
+                case ESCAPE_KEY:
+                    this.editText = this.todo.title
+                    this.todoBeingEditedId = null
+                    break
+    
+                case ENTER_KEY:
+                    this.submit()
+                    break
+    
+                default:
+                    break
+            }
+        })
     }
 
     @action

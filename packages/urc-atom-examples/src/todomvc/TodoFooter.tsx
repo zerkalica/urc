@@ -25,7 +25,7 @@ class TodoFooterService {
         }
     ) {}
 
-    @action
+    @action.event
     clickLink(e: React.MouseEvent<HTMLAnchorElement>) {
         e.preventDefault()
         const linkid = (e.target as any).dataset.linkid

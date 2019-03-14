@@ -104,7 +104,6 @@ export class TodoRepository implements ITodoRepository {
     @action update(todo: Todo) {
         const newTodos = this.todos.map(t => t.id === todo.id ? todo : t)
         this.todos = newTodos
-        return
         this.actions.run(() => {
             this._.fetch(`/api/todo/${todo.id}`, {
                 method: 'POST',
