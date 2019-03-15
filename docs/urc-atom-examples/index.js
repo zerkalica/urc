@@ -25724,81 +25724,130 @@
     })($ || ($ = {}));
     var $$1 = $;
 
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */
+
+    function __decorate$1(decorators, target, key, desc) {
+        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        return c > 3 && r && Object.defineProperty(target, key, r), r;
+    }
+
     function isFunctionComponent(OrigComponent) {
         return (!OrigComponent.prototype ||
             typeof OrigComponent.prototype.render !== 'function');
     }
+    function reset_props(proto, name, descr) {
+        return {
+            configurable: true,
+            enumerable: true,
+            get() {
+                return this.__props;
+            },
+            set(v) {
+                if (v !== this.__props && this.__atom !== undefined)
+                    this.__atom.reset();
+                this.__props = v;
+            }
+        };
+    }
+    function reset_state(proto, name, descr) {
+        return {
+            configurable: true,
+            enumerable: true,
+            get() {
+                return this.__state;
+            },
+            set(v) {
+                if (v !== this.__state && this.__atom !== undefined)
+                    this.__atom.reset();
+                this.__state = v;
+            }
+        };
+    }
     function createObserverComponent(ReactAtom, BaseComponent, renderError, OrigComponent) {
-        var _a;
         const renderFunction = isFunctionComponent(OrigComponent)
             ? OrigComponent
             : undefined;
         const displayName = OrigComponent.displayName ||
             OrigComponent.name;
-        const Cls = (_a = class extends (renderFunction
-                ? BaseComponent
-                : OrigComponent) {
-                constructor(props, context) {
-                    super(props, context);
-                    const id = (props && props.id) ||
-                        this.constructor.displayName;
-                    this[Symbol.toStringTag] = id;
-                    this.__atom = new ReactAtom(id, this);
-                    this.__origRender = renderFunction || super.render;
-                    this.__lastError = undefined;
-                    if (renderError) {
-                        this.__lastData = undefined;
-                        this.__lastError = null;
-                    }
+        class Cls extends (renderFunction
+            ? BaseComponent
+            : OrigComponent) {
+            constructor(props, context) {
+                super(props, context);
+                const id = (props && props.id) ||
+                    this.constructor.displayName;
+                this[Symbol.toStringTag] = id;
+                this.__atom = new ReactAtom(id, this);
+                this.__origRender = renderFunction || super.render;
+                this.__lastError = undefined;
+                if (renderError) {
+                    this.__lastData = undefined;
+                    this.__lastError = null;
                 }
-                __value() {
-                    return this.__origRender(this.props);
+            }
+            __value() {
+                return this.__origRender(this.props);
+            }
+            componentDidCatch(error, init) {
+                if (super.componentDidCatch)
+                    super.componentDidCatch(error, init);
+                if (this.__lastError === undefined)
+                    return;
+                this.__lastError = error;
+                this.forceUpdate();
+            }
+            componentWillUnmount() {
+                if (super.componentWillUnmount)
+                    super.componentWillUnmount();
+                if (this.__atom === undefined)
+                    return;
+                this.__atom.destructor();
+                this.__atom = undefined;
+            }
+            render() {
+                if (this.__lastError === undefined)
+                    return this.__atom.render();
+                let data;
+                try {
+                    if (this.__lastError)
+                        throw this.__lastError;
+                    data = this.__atom.render();
+                    this.__lastData = data;
                 }
-                componentDidCatch(error, init) {
-                    if (super.componentDidCatch)
-                        super.componentDidCatch(error, init);
-                    if (this.__lastError === undefined)
-                        return;
-                    this.__lastError = error;
-                    this.forceUpdate();
+                catch (error) {
+                    this.__lastError = null;
+                    data = renderError({
+                        ownerId: String(this.__atom),
+                        error,
+                        children: this.__lastData
+                    });
                 }
-                componentDidUpdate(prevProps, prevState, snapshot) {
-                    if (super.componentDidUpdate)
-                        super.componentDidUpdate(prevProps, prevState, snapshot);
-                    this.__atom.reset();
-                }
-                componentWillUnmount() {
-                    if (super.componentWillUnmount)
-                        super.componentWillUnmount();
-                    if (this.__atom === undefined)
-                        return;
-                    this.__atom.destructor();
-                    this.__atom = undefined;
-                }
-                render() {
-                    if (this.__lastError === undefined)
-                        return this.__atom.render();
-                    let data;
-                    try {
-                        if (this.__lastError)
-                            throw this.__lastError;
-                        data = this.__atom.render();
-                        this.__lastData = data;
-                    }
-                    catch (error) {
-                        this.__lastError = null;
-                        data = renderError({
-                            ownerId: String(this.__atom),
-                            error,
-                            children: this.__lastData
-                        });
-                    }
-                    return data;
-                }
-            },
-            _a.displayName = displayName,
-            _a.__urc = true,
-            _a);
+                return data;
+            }
+        }
+        Cls.displayName = displayName;
+        Cls.__urc = true;
+        __decorate$1([
+            reset_props
+        ], Cls.prototype, "props", void 0);
+        __decorate$1([
+            reset_state
+        ], Cls.prototype, "state", void 0);
         if (renderFunction) {
             const props = Object.getOwnPropertyNames(OrigComponent);
             for (let i = 0; i < props.length; i++) {
@@ -25827,20 +25876,22 @@
             this.schedule();
         }
         doubt_slaves() {
-            if (MolReactAtom.transaction_count > 0)
+            if (MolReactAtom.synced === this)
                 return;
             return this.schedule();
         }
         sync_begin() {
-            if (MolReactAtom.transaction_count++ > 0)
+            if (MolReactAtom.synced)
                 return;
             $mol_fiber.deadline = Number.POSITIVE_INFINITY;
+            MolReactAtom.synced = this;
         }
         sync_end() {
-            if (--MolReactAtom.transaction_count > 0)
+            if (MolReactAtom.synced !== this)
                 return;
-            this.forceUpdate();
             $mol_fiber.deadline = 0;
+            MolReactAtom.synced = undefined;
+            this.forceUpdate();
         }
         /**
          * Called on componentDidUpdate. Used to detect if props or react component state changed.
@@ -25897,12 +25948,14 @@
             return this.forceUpdate(super.wait(promise));
         }
     }
+    MolReactAtom.synced = undefined;
     /**
      * Disable $mol_conform in context. Do not need to reconcile vdom node.
      * Some fields in node are read only, $mol_conform impact perfomance.
+     *
+     * If instance of vdom node is not changed - react do not refresh children.
      */
-    MolReactAtom.$ = $$1.$mol_ambient({ $mol_conform });
-    MolReactAtom.transaction_count = 0;
+    MolReactAtom.prototype.$ = $$1.$mol_ambient({ $mol_conform });
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -25919,7 +25972,7 @@
     and limitations under the License.
     ***************************************************************************** */
 
-    function __decorate$1(decorators, target, key, desc) {
+    function __decorate$2(decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
         else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -25930,47 +25983,69 @@
     function action_sync(obj, name, descr) {
         return action_decorator(obj, name, descr, true);
     }
-    function action_defer(obj, name, descr) {
+    function action_event(obj, name, descr) {
         return action_decorator(obj, name, descr, false, true);
     }
-    const frame = typeof requestAnimationFrame === 'undefined'
-        ? cb => setTimeout(cb, 0)
-        : requestAnimationFrame;
-    function action_decorator(obj, name, descr, sync, defered) {
-        const calculate = descr.value;
-        function handler(current, ...args) {
+    function action_decorator(obj, name, descr, sync, event) {
+        if (typeof obj === 'function') {
             const master = new $mol_fiber$1();
-            master.calculate = calculate.bind(this, ...args);
+            master.calculate = obj;
             master[Symbol.toStringTag] = `${this}.${name}()`;
-            const slave = sync && current instanceof MolReactAtom ? current : undefined;
-            try {
-                if (slave !== undefined)
+            if ($mol_fiber$1.current)
+                master.get();
+            else
+                master.schedule();
+            return;
+        }
+        const calculate = descr.value;
+        function handler(slave, ...args) {
+            if (slave) {
+                try {
                     slave.sync_begin();
-                return defered ? frame(master.get.bind(master)) : master.get();
-            }
-            finally {
-                if (slave !== undefined)
+                    calculate.call(this, ...args);
+                }
+                finally {
                     slave.sync_end();
+                }
+            }
+            else if (event) {
+                calculate.call(this, ...args);
+            }
+            else {
+                const master = new $mol_fiber$1();
+                master.calculate = calculate.bind(this, ...args);
+                master[Symbol.toStringTag] = `${this}.${name}()`;
+                if ($mol_fiber$1.current)
+                    master.get();
+                else
+                    master.schedule();
             }
         }
         Object.defineProperty(handler, 'name', { value: `@action ${name}` });
         const binds = new WeakMap();
         function get() {
-            const current = $mol_fiber$1.current;
-            let binded = binds.get(current);
+            const current = sync && $mol_fiber$1.current instanceof MolReactAtom
+                ? $mol_fiber$1.current
+                : undefined;
+            const key = current || this;
+            let binded = binds.get(key);
             if (binded === undefined) {
                 binded = handler.bind(this, current);
-                binds.set(current, binded);
+                binded.t = this;
+                binds.set(key, binded);
+            }
+            else if (current && binded.t !== this) {
+                throw new Error(`Second intance of ${this} called from ${current}`);
             }
             return binded;
         }
         return {
             enumerable: descr.enumerable,
             configurable: true,
-            get,
+            get
         };
     }
-    action_decorator.defer = action_defer;
+    action_decorator.event = action_event;
     action_decorator.sync = action_sync;
     const action = action_decorator;
 
@@ -25987,10 +26062,10 @@
         });
     }
 
-    const { $mol_atom2_field, $mol_atom2_dict, $mol_fail_hidden } = $$1;
-    const dict = $mol_atom2_dict;
-    const mem = $mol_atom2_field;
-    const fail = $mol_fail_hidden;
+    const dict = $$1.$mol_atom2_dict;
+    const mem = $$1.$mol_atom2_field;
+    const fail = $$1.$mol_fail_hidden;
+    const defer = $$1.$mol_fiber_defer;
 
     function createFiber(calculate) {
         const fiber = new $$1.$mol_fiber();
@@ -26029,7 +26104,7 @@
             this.scheduled = true;
             // Recreate completed fiber if refresh called from error
             this.tasks[0] = createFiber(this.tasks[0].calculate);
-            $$1.$mol_fiber_defer(this._processing);
+            defer(this._processing);
         }
         processing() {
             if (this.tasks.length === 0)
@@ -26061,7 +26136,7 @@
             this.scheduled = false;
         }
     }
-    __decorate$1([
+    __decorate$2([
         mem
     ], Queue.prototype, "locked", void 0);
 
@@ -29095,7 +29170,7 @@
     var counter = 0;
     var queue$1 = {};
     var ONREADYSTATECHANGE = 'onreadystatechange';
-    var defer, channel, port;
+    var defer$1, channel, port;
     var run = function () {
       var id = +this;
       // eslint-disable-next-line no-prototype-builtins
@@ -29118,7 +29193,7 @@
           // eslint-disable-next-line no-new-func
           _invoke(typeof fn == 'function' ? fn : Function(fn), args);
         };
-        defer(counter);
+        defer$1(counter);
         return counter;
       };
       clearTask = function clearImmediate(id) {
@@ -29126,12 +29201,12 @@
       };
       // Node.js 0.8-
       if (_cof$1(process$1) == 'process') {
-        defer = function (id) {
+        defer$1 = function (id) {
           process$1.nextTick(_ctx$1(run, id, 1));
         };
       // Sphere (JS game engine) Dispatch API
       } else if (Dispatch && Dispatch.now) {
-        defer = function (id) {
+        defer$1 = function (id) {
           Dispatch.now(_ctx$1(run, id, 1));
         };
       // Browsers with MessageChannel, includes WebWorkers
@@ -29139,17 +29214,17 @@
         channel = new MessageChannel$1();
         port = channel.port2;
         channel.port1.onmessage = listener;
-        defer = _ctx$1(port.postMessage, port, 1);
+        defer$1 = _ctx$1(port.postMessage, port, 1);
       // Browsers with postMessage, skip WebWorkers
       // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
       } else if (_global$1.addEventListener && typeof postMessage == 'function' && !_global$1.importScripts) {
-        defer = function (id) {
+        defer$1 = function (id) {
           _global$1.postMessage(id + '', '*');
         };
         _global$1.addEventListener('message', listener, false);
       // IE8-
       } else if (ONREADYSTATECHANGE in _domCreate$1('script')) {
-        defer = function (id) {
+        defer$1 = function (id) {
           _html.appendChild(_domCreate$1('script'))[ONREADYSTATECHANGE] = function () {
             _html.removeChild(this);
             run.call(id);
@@ -29157,7 +29232,7 @@
         };
       // Rest old browsers
       } else {
-        defer = function (id) {
+        defer$1 = function (id) {
           setTimeout(_ctx$1(run, id, 1), 0);
         };
       }
@@ -43465,7 +43540,7 @@
     var counter$1 = 0;
     var queue$2 = {};
     var ONREADYSTATECHANGE$1 = 'onreadystatechange';
-    var defer$1, channel$1, port$1;
+    var defer$2, channel$1, port$1;
     var run$1 = function () {
       var id = +this;
       // eslint-disable-next-line no-prototype-builtins
@@ -43488,7 +43563,7 @@
           // eslint-disable-next-line no-new-func
           _invoke$1(typeof fn == 'function' ? fn : Function(fn), args);
         };
-        defer$1(counter$1);
+        defer$2(counter$1);
         return counter$1;
       };
       clearTask$1 = function clearImmediate(id) {
@@ -43496,12 +43571,12 @@
       };
       // Node.js 0.8-
       if (_cof(process$4) == 'process') {
-        defer$1 = function (id) {
+        defer$2 = function (id) {
           process$4.nextTick(_ctx(run$1, id, 1));
         };
       // Sphere (JS game engine) Dispatch API
       } else if (Dispatch$1 && Dispatch$1.now) {
-        defer$1 = function (id) {
+        defer$2 = function (id) {
           Dispatch$1.now(_ctx(run$1, id, 1));
         };
       // Browsers with MessageChannel, includes WebWorkers
@@ -43509,17 +43584,17 @@
         channel$1 = new MessageChannel$2();
         port$1 = channel$1.port2;
         channel$1.port1.onmessage = listener$1;
-        defer$1 = _ctx(port$1.postMessage, port$1, 1);
+        defer$2 = _ctx(port$1.postMessage, port$1, 1);
       // Browsers with postMessage, skip WebWorkers
       // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
       } else if (_global.addEventListener && typeof postMessage == 'function' && !_global.importScripts) {
-        defer$1 = function (id) {
+        defer$2 = function (id) {
           _global.postMessage(id + '', '*');
         };
         _global.addEventListener('message', listener$1, false);
       // IE8-
       } else if (ONREADYSTATECHANGE$1 in _domCreate('script')) {
-        defer$1 = function (id) {
+        defer$2 = function (id) {
           _html$1.appendChild(_domCreate('script'))[ONREADYSTATECHANGE$1] = function () {
             _html$1.removeChild(this);
             run$1.call(id);
@@ -43527,7 +43602,7 @@
         };
       // Rest old browsers
       } else {
-        defer$1 = function (id) {
+        defer$2 = function (id) {
           setTimeout(_ctx(run$1, id, 1), 0);
         };
       }
@@ -45122,9 +45197,10 @@
     ], Hello);
 
     class TodoToAdd {
-        constructor(opts) {
-            this[Symbol.toStringTag] = opts.id;
-            this._ = opts._;
+        constructor(_, id) {
+            this._ = _;
+            this.id = id;
+            this[Symbol.toStringTag] = id;
             this.title = '';
         }
         setRef(ref) {
@@ -45134,24 +45210,26 @@
         setTitle({ target }) {
             this.title = target.value;
         }
-        submit(e) {
-            if (e.keyCode === 13 && this.title) {
+        submit({ keyCode }) {
+            action(() => {
+                if (keyCode !== 13 || !this.title)
+                    return;
                 this._.todoRepository.create({ title: this.title });
                 this.title = '';
-            }
+            });
         }
     }
     __decorate([
         mem
     ], TodoToAdd.prototype, "title", void 0);
     __decorate([
-        action.defer
+        action
     ], TodoToAdd.prototype, "setRef", null);
     __decorate([
         action.sync
     ], TodoToAdd.prototype, "setTitle", null);
     __decorate([
-        action
+        action.event
     ], TodoToAdd.prototype, "submit", null);
     const css$1 = stylesheet({
         header: {
@@ -45187,16 +45265,13 @@
     let TodoHeader = class TodoHeader extends react_4 {
         constructor() {
             super(...arguments);
-            this.todoToAdd = new TodoToAdd({
-                _: this.props._,
-                id: `${this.props.id}.todoToAdd`
-            });
+            this.todoToAdd = new TodoToAdd(this.props._, `${this.props.id}.todoToAdd`);
         }
         render() {
             const { todoToAdd, props: { id, _: { todoRepository: { toggleAllDisabled, toggleAll, activeTodoCount } } } } = this;
             return (react_22("header", { id: id, className: css$1.header },
                 react_22("input", { id: `${id}-toggleAll`, disabled: toggleAllDisabled, type: "checkbox", onChange: toggleAll, className: css$1.toggleAll, checked: activeTodoCount === 0 }),
-                react_22("input", { id: `${id}-input`, className: css$1.newTodo, placeholder: "What needs to be done?", onInput: todoToAdd.setTitle, ref: todoToAdd.setRef, value: todoToAdd.title, onKeyDown: todoToAdd.submit })));
+                react_22("input", { id: `${id}-input`, className: css$1.newTodo, placeholder: "What needs to be done?", onInput: todoToAdd.setTitle, onChange: () => { }, ref: todoToAdd.setRef, value: todoToAdd.title, onKeyDown: todoToAdd.submit })));
         }
     };
     TodoHeader = __decorate([
@@ -45244,18 +45319,20 @@
             }
             this.todoBeingEditedId = null;
         }
-        submitOrRestore(event) {
-            switch (event.which) {
-                case ESCAPE_KEY:
-                    this.editText = this.todo.title;
-                    this.todoBeingEditedId = null;
-                    break;
-                case ENTER_KEY:
-                    this.submit();
-                    break;
-                default:
-                    break;
-            }
+        submitOrRestore({ which }) {
+            action(() => {
+                switch (which) {
+                    case ESCAPE_KEY:
+                        this.editText = this.todo.title;
+                        this.todoBeingEditedId = null;
+                        break;
+                    case ENTER_KEY:
+                        this.submit();
+                        break;
+                    default:
+                        break;
+                }
+            });
         }
         toggle() {
             this.todo.update({ completed: !this.todo.completed });
@@ -45276,16 +45353,16 @@
         action
     ], TodoItemEdit.prototype, "beginEdit", null);
     __decorate([
-        action
+        action.sync
     ], TodoItemEdit.prototype, "setText", null);
     __decorate([
-        action.defer
+        action
     ], TodoItemEdit.prototype, "setEditInputRef", null);
     __decorate([
         action
     ], TodoItemEdit.prototype, "submit", null);
     __decorate([
-        action
+        action.event
     ], TodoItemEdit.prototype, "submitOrRestore", null);
     __decorate([
         action
@@ -45513,11 +45590,13 @@
         }
         toString() { return this.id; }
         get todos() {
-            const todos = this._.fetch('/api/todos')
-                .map(data => new Todo(Object.assign({}, data, { created: new Date(data.created), _: { todoRepository: this } })));
+            const todos = this.clientTodos || (this._.fetch('/api/todos')
+                .map(data => new Todo(Object.assign({}, data, { created: new Date(data.created), _: { todoRepository: this } }))));
             return todos;
         }
-        set todos(data) { }
+        set todos(data) {
+            this.clientTodos = data;
+        }
         get filter() {
             return this._.locationStore.values['todo_filter'] || TODO_FILTER.ALL;
         }
@@ -45629,10 +45708,10 @@
     }
     __decorate([
         mem
-    ], TodoRepository.prototype, "todos", null);
+    ], TodoRepository.prototype, "clientTodos", void 0);
     __decorate([
         mem
-    ], TodoRepository.prototype, "filteredTodos", null);
+    ], TodoRepository.prototype, "todos", null);
     __decorate([
         mem
     ], TodoRepository.prototype, "activeTodoCount", null);
@@ -45737,7 +45816,7 @@
         }
     }
     __decorate([
-        action
+        action.event
     ], TodoFooterService.prototype, "clickLink", null);
     let TodoFooter = class TodoFooter extends react_4 {
         constructor() {
