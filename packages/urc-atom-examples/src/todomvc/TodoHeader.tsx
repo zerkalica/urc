@@ -6,18 +6,13 @@ import {observer, sheet, Deps} from '../common'
 class TodoToAdd {
     @mem title: string
 
-    protected _: {
-        todoRepository: TodoRepository
-    }
-
-    constructor(opts: {
-        id: string
-        _: {
+    constructor(
+        protected _: {
             todoRepository: TodoRepository
-        }
-    }) {
-        this[Symbol.toStringTag] = opts.id
-        this._ = opts._
+        },
+        public id: string,
+    ) {
+        this[Symbol.toStringTag] = id
         this.title = ''
     }
 
@@ -80,12 +75,13 @@ export interface TodoHeaderProps {
     }
 }
 
+
 @observer
 export class TodoHeader extends React.PureComponent<TodoHeaderProps> {
-    protected todoToAdd = new TodoToAdd({
-        _: this.props._,
-        id: `${this.props.id}.todoToAdd`
-    })
+    protected todoToAdd = new TodoToAdd(
+        this.props._,
+        `${this.props.id}.todoToAdd`
+    )
 
     render() {
         const {

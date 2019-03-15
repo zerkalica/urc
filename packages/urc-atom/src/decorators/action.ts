@@ -33,7 +33,12 @@ function action_decorator<Host>(
     event?: boolean
 ) {
     if (typeof obj === 'function') {
-        return defer(obj as (() => void))
+        const master = new $mol_fiber()
+        master.calculate = obj as (() => void)
+        master[Symbol.toStringTag] = `${this}.${name}()`
+        if ($mol_fiber.current) master.get()
+        else master.schedule()
+        return
     }
     const calculate = descr.value
 
