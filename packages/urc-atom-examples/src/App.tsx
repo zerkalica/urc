@@ -83,7 +83,7 @@ export interface AppProps {
 }
 
 @observer
-export class App extends React.PureComponent<AppProps> {
+export class App extends React.Component<AppProps> {
     protected _ = {
         ...this.props._,
         locationStore: new LocationStore(

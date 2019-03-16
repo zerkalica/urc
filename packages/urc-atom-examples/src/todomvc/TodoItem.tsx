@@ -1,4 +1,4 @@
-import {action, mem, defer} from 'urc-atom'
+import {action, mem, object2} from 'urc-atom'
 import {Todo} from './models'
 import {observer, sheet, Sheet, style} from '../common'
 import * as React from 'react'
@@ -6,13 +6,14 @@ import * as React from 'react'
 const ESCAPE_KEY = 27
 const ENTER_KEY = 13
 
-class TodoItemEdit {
+class TodoItemEdit extends object2 {
     @mem todoBeingEditedId: string | void
     @mem editText: string
 
     todo: Todo
 
     constructor(opts: {id: string; todo: Todo}) {
+        super()
         this[Symbol.toStringTag] = opts.id
         this.todo = opts.todo
         this.editText = ''
@@ -33,7 +34,7 @@ class TodoItemEdit {
         this.editText = (target as any).value.trim()
     }
 
-    @action
+    @action.event
     setEditInputRef(el: HTMLInputElement | void) {
         if (el) el.focus()
     }
@@ -229,7 +230,7 @@ export interface TodoItemProps {
 const theme = new TodoItemTheme()
 
 @observer
-export class TodoItem extends React.PureComponent<TodoItemProps> {
+export class TodoItem extends React.Component<TodoItemProps> {
     protected todoItemEdit = new TodoItemEdit({
         id: `${this.props.id}.todoItemEdit`,
         todo: this.props.todo
@@ -277,12 +278,10 @@ export class TodoItem extends React.PureComponent<TodoItemProps> {
                 />
                 <label
                     id={`${id}-beginEdit`}
-                    className={theme.label(todo.completed, todo.updateDisabled)}
+                    className={theme.label(todo.completed, updating || todo.updateDisabled)}
                     onDoubleClick={todoItemEdit.beginEdit}
                 >
-                    {updating && '['}
                     {todo.title}
-                    {updating && ']'}
                 </label>
                 <button
                     id={`${id}-destroy`}

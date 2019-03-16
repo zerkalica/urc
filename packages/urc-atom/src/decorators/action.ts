@@ -2,7 +2,7 @@ import $ from 'mol_atom2_all'
 const {$mol_fiber} = $
 
 import {MolReactAtom} from '../MolReactAtom'
-import { defer } from './reexports';
+import {defer} from './reexports'
 
 function action_sync<Host>(
     obj: Host,
@@ -25,6 +25,8 @@ interface ActionMethod {
     t?: object | void
 }
 
+let parentAction: string | undefined = undefined
+
 function action_decorator<Host>(
     obj: Host | (() => void),
     name: string,
@@ -33,29 +35,38 @@ function action_decorator<Host>(
     event?: boolean
 ) {
     if (typeof obj === 'function') {
+        const current = $mol_fiber.current
         const master = new $mol_fiber()
         master.calculate = obj as (() => void)
-        master[Symbol.toStringTag] = `${this}.${name}()`
-        if ($mol_fiber.current) master.get()
+        master[Symbol.toStringTag] = (parentAction
+            ? parentAction
+            : (current
+                ? current[Symbol.toStringTag]
+                : (obj as (() => void)).name
+            )
+        ) + '#action'
+
+        if (current) master.get()
         else master.schedule()
         return
     }
     const calculate = descr.value
 
     function handler(slave: MolReactAtom<any> | void, ...args: any[]) {
-        if (slave) {
+        parentAction = `${this}.${name}()`
+        if (event || slave) {
             try {
-                slave.sync_begin()
+                if (slave) slave.sync_begin()
                 calculate.call(this, ...args)
             } finally {
-                slave.sync_end()
+                parentAction = undefined
+                if (slave) slave.sync_end()
             }
-        } else if (event) {
-            calculate.call(this, ...args)
         } else {
             const master = new $mol_fiber()
             master.calculate = calculate.bind(this, ...args)
-            master[Symbol.toStringTag] = `${this}.${name}()`
+            master[Symbol.toStringTag] = parentAction
+            parentAction = undefined
             if ($mol_fiber.current) master.get()
             else master.schedule()
         }

@@ -32,29 +32,49 @@ export class Queue extends $.$mol_object2 implements Refreshable {
      */
     @mem locked: Error | PromiseLike<any> | void
 
+    constructor(id?: string) {
+        super()
+        this[Symbol.toStringTag] = id || this.constructor.name
+        this.processing = this.processing.bind(this)
+        this.refresh = this.refresh.bind(this)
+        Object.defineProperty(this.processing, 'name', {value: this[Symbol.toStringTag] + '.processing'})
+    }
+
     run(calculate: () => void): void {
         const current = $.$mol_fiber.current
         if (!calculate.name && current)
-            Object.defineProperties(calculate, {
-                name: {value: current[Symbol.toStringTag] + '#task'}
+            Object.defineProperty(calculate, 'name', {
+                value: current[Symbol.toStringTag] + '#task'
             })
 
         this.tasks.push(createFiber(calculate))
         this.refresh()
     }
 
+    get pending(): boolean {
+        const {locked} = this
+        return locked && !(locked instanceof Error)
+    }
+
+    get error(): Error | undefined {
+        const {locked} = this
+        return locked instanceof Error ? locked : undefined
+    }
+
+    get complete(): boolean {
+        return !this.locked
+    }
+
     protected scheduled = false
 
-    refresh = this._refresh.bind(this)
-    private _processing = this.processing.bind(this)
-    private _refresh() {
+    refresh() {
         if (this.tasks.length === 0) return
         if (this.scheduled) return
         this.scheduled = true
 
         // Recreate completed fiber if refresh called from error
         this.tasks[0] = createFiber(this.tasks[0].calculate)
-        defer(this._processing)
+        defer(this.processing)
     }
 
     processing(): void {

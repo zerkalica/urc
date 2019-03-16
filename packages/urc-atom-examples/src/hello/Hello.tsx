@@ -60,7 +60,7 @@ export interface HelloProps {
 }
 
 @observer
-export class Hello extends React.PureComponent<HelloProps> {
+export class Hello extends React.Component<HelloProps> {
     protected _ = {
         helloModel: new HelloModel({
             id: this.props.id + '.helloModel',

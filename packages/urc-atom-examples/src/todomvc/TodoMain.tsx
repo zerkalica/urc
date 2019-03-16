@@ -20,7 +20,7 @@ export interface TodoMainProps {
 }
 
 @observer
-export class TodoMain extends React.PureComponent<TodoMainProps> {
+export class TodoMain extends React.Component<TodoMainProps> {
     render() {
         const {
             props: {

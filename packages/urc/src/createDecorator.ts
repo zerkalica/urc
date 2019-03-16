@@ -15,6 +15,7 @@ type ErrorInfo = any
 export interface Component<Props, State, ReactNode> {
     props: Props
     state: State
+    shouldComponentUpdate?(nextProps: Props, nextState: State, nextContext?: any): boolean
     forceUpdate(): void
     componentDidCatch?(error: Error, errorInfo: ErrorInfo): void
     componentWillUnmount?(): void
@@ -25,62 +26,33 @@ function isFunctionComponent<Props, ReactNode>(
     OrigComponent:
         | ((props: Props) => ReactNode)
         | ComponentClass<Props, any, ReactNode>
-): OrigComponent is ((props: Props) => ReactNode) {
+): OrigComponent is (props: Props) => ReactNode {
     return (
         !OrigComponent.prototype ||
         typeof OrigComponent.prototype.render !== 'function'
     )
 }
 
-function reset_props<
-    Host extends object = any,
-    Field extends keyof Host = any,
-    Value extends Host[Field] = any
->(
-    proto: Host,
-    name: Field,
-    descr?: TypedPropertyDescriptor<Value>
-): any {
-    return {
-        configurable: true,
-        enumerable: true,
-        get(): Value {
-            return this.__props
-        },
-        set(v: Value) {
-            if (v !== this.__props && this.__atom !== undefined) this.__atom.reset()
-            this.__props = v
-        }
-    }
-}
+const keyList = Object.keys
 
-function reset_state<
-    Host extends object = any,
-    Field extends keyof Host = any,
-    Value extends Host[Field] = any
->(
-    proto: Host,
-    name: Field,
-    descr?: TypedPropertyDescriptor<Value>
-): any {
-    return {
-        configurable: true,
-        enumerable: true,
-        get(): Value {
-            return this.__state
-        },
-        set(v: Value) {
-            if (v !== this.__state && this.__atom !== undefined) this.__atom.reset()
-            this.__state = v
-        }
-    }
+function shallowEqual<A>(a: A, b: A): boolean {
+    if (a === b) return true
+    if (!(a instanceof Object) || !(b instanceof Object)) return false
+
+    const keys = keyList(a)
+    const length = keys.length
+
+    for (let i = 0; i < length; i++) if (!(keys[i] in b)) return false
+    for (let i = 0; i < length; i++) if (a[keys[i]] !== b[keys[i]]) return false
+
+    return length === keyList(b).length
 }
 
 export type ComponentDecorator<ReactNode> =
     | (<Component extends ComponentClass<ReactNode>>(
           component: Component
       ) => Component)
-    | (<Component extends (<Props extends {}>(props?: Props) => ReactNode)>(
+    | (<Component extends <Props extends {}>(props?: Props) => ReactNode>(
           component: Component
       ) => Component)
 
@@ -108,11 +80,8 @@ function createObserverComponent<
         static displayName = displayName
         static __urc = true
 
-        protected __props: Props
-        @reset_props props: Props
-
-        protected __state: State
-        @reset_state state: State
+        props: Props
+        state: State
 
         __atom: IReactAtom<ReactNode>
         __origRender: (props?: Props) => ReactNode
@@ -126,10 +95,9 @@ function createObserverComponent<
                 (this.constructor as {displayName?: string}).displayName
 
             this[Symbol.toStringTag] = id
-            this.__atom = new ReactAtom(id, this as IReactHost<
-                ReactNode
-            >)
-            this.__origRender = renderFunction as (props?: Props) => ReactNode || super.render
+            this.__atom = new ReactAtom(id, this as IReactHost<ReactNode>)
+            this.__origRender =
+                (renderFunction as (props?: Props) => ReactNode) || super.render
             this.__lastError = undefined
             if (renderError) {
                 this.__lastData = undefined
@@ -139,6 +107,15 @@ function createObserverComponent<
 
         __value() {
             return this.__origRender(this.props)
+        }
+
+        shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
+            const result = super.shouldComponentUpdate
+                ? super.shouldComponentUpdate(nextProps, nextState)
+                : (shallowEqual(this.props, nextProps) || this.state !== nextState)
+
+            if (result) this.__atom.reset()
+            return result
         }
 
         componentDidCatch(error: Error, init: ErrorInfo) {

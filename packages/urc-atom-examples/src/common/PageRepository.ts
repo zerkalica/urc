@@ -1,4 +1,4 @@
-import {mem, action} from 'urc-atom'
+import {mem, action, object2} from 'urc-atom'
 import {LocationStore} from './LocationStore'
 
 export interface BasePage {
@@ -11,7 +11,7 @@ export interface SetPageIdEvent {
     target: any
 }
 
-export class PageRepository<Page extends BasePage> {
+export class PageRepository<Page extends BasePage> extends object2 {
     readonly pages: Page[]
 
     protected readonly key: string
@@ -20,22 +20,24 @@ export class PageRepository<Page extends BasePage> {
         protected readonly _: {
             locationStore: LocationStore
         },
-        protected readonly id: string,
+        id: string,
         opts: {
             pages: Page[]
             key: string
         }
     ) {
+        super()
+        this[Symbol.toStringTag] = id
         this.pages = opts.pages
         this.key = opts.key
     }
 
-    toString() { return this.id }
-
-    @action setPageId(e: SetPageIdEvent) {
+    @action.event setPageId(e: SetPageIdEvent) {
         e.preventDefault()
         const id = e.target.dataset.id
-        this.page = this.pages.find(page => page.id === id)
+        action(() => {
+            this.page = this.pages.find(page => page.id === id)
+        })
     }
 
     getPageUrl(page: string): string {

@@ -1,17 +1,16 @@
-import {mem, dict} from 'urc-atom'
+import {mem, dict, object2} from 'urc-atom'
 
-export class LocationStore {
+export class LocationStore extends object2 {
     constructor(
         protected _: {
             location: Location
             history: History
         },
-        protected id: string,
+        id: string,
         protected ns: string = 'app'
-    ) {}
-
-    toString() {
-        return this.id
+    ) {
+        super()
+        this[Symbol.toStringTag] = id
     }
 
     protected params(): URLSearchParams {

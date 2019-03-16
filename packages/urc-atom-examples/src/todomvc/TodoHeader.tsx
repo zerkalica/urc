@@ -1,9 +1,9 @@
 import * as React from 'react'
-import {action, mem} from 'urc-atom'
+import {action, mem, object2} from 'urc-atom'
 import {TodoRepository} from './models'
 import {observer, sheet, Deps} from '../common'
 
-class TodoToAdd {
+class TodoToAdd extends object2 {
     @mem title: string
 
     constructor(
@@ -12,6 +12,7 @@ class TodoToAdd {
         },
         public id: string,
     ) {
+        super()
         this[Symbol.toStringTag] = id
         this.title = ''
     }
@@ -77,7 +78,7 @@ export interface TodoHeaderProps {
 
 
 @observer
-export class TodoHeader extends React.PureComponent<TodoHeaderProps> {
+export class TodoHeader extends React.Component<TodoHeaderProps> {
     protected todoToAdd = new TodoToAdd(
         this.props._,
         `${this.props.id}.todoToAdd`

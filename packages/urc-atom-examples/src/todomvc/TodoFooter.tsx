@@ -111,7 +111,7 @@ export interface TodoFooterProps {
 }
 
 @observer
-export class TodoFooter extends React.PureComponent<TodoFooterProps> {
+export class TodoFooter extends React.Component<TodoFooterProps> {
     protected todoFooterService = new TodoFooterService(this.props._)
 
     render() {

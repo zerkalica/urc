@@ -1,4 +1,4 @@
-import {action, mem, Queue} from 'urc-atom'
+import {action, mem, Queue, object2} from 'urc-atom'
 import {Todo, ITodoRepository} from './Todo'
 import {LocationStore, Deps, Omit} from '../../common'
 
@@ -8,18 +8,19 @@ export enum TODO_FILTER {
     ACTIVE = 'active',
 }
 
-export class TodoRepository implements ITodoRepository {
+export class TodoRepository extends object2 implements ITodoRepository {
     constructor(
         protected _: {
             fetch: <V>(url: string, init?: RequestInit) => V
             locationStore: LocationStore
         } & Omit<Deps<typeof Todo>, 'todoRepository'>,
-        protected id: string,
-    ) {}
+        id: string,
+    ) {
+        super()
+        this[Symbol.toStringTag] = id
+    }
 
-    protected actions: Queue = new Queue()
-
-    toString() { return this.id }
+    protected actions: Queue = new Queue(`${this}.actions`)
 
     @mem clientTodos: Todo[] | void // = undefined
     @mem get todos(): Todo[] {

@@ -26,7 +26,7 @@ export interface TodoAppProps {
 }
 
 @observer
-export class TodoApp extends React.PureComponent<TodoAppProps> {
+export class TodoApp extends React.Component<TodoAppProps> {
     protected _ = {
         ...this.props._,
         todoRepository: new TodoRepository(
