@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.4.3](https://github.com/zerkalica/urc-atom/compare/v2.4.2...v2.4.3) (2019-03-16)
+
+
+### Bug Fixes
+
+* defer to actions ([91f426d](https://github.com/zerkalica/urc-atom/commit/91f426d))
+* defered actions ([c43bc16](https://github.com/zerkalica/urc-atom/commit/c43bc16))
+* shouldComponentUpdate, debug tags ([fa692e9](https://github.com/zerkalica/urc-atom/commit/fa692e9))
+
+
+
+
+
 ## [2.4.2](https://github.com/zerkalica/urc-atom/compare/v2.4.1...v2.4.2) (2019-03-13)
 
 

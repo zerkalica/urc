@@ -1,6 +1,6 @@
 {
   "name": "urc-atom-examples",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "license": "MIT",
   "description": "urc-atom examples",
   "author": {
@@ -53,8 +53,8 @@
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
     "typestyle": "^2.0.1",
-    "urc": "^2.4.2",
-    "urc-atom": "^2.4.2"
+    "urc": "^2.4.3",
+    "urc-atom": "^2.4.3"
   },
   "devDependencies": {
     "@types/react": "^16.8.5",
