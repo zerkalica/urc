@@ -25724,59 +25724,25 @@
     })($ || ($ = {}));
     var $$1 = $;
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */
-
-    function __decorate$1(decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    }
-
     function isFunctionComponent(OrigComponent) {
         return (!OrigComponent.prototype ||
             typeof OrigComponent.prototype.render !== 'function');
     }
-    function reset_props(proto, name, descr) {
-        return {
-            configurable: true,
-            enumerable: true,
-            get() {
-                return this.__props;
-            },
-            set(v) {
-                if (v !== this.__props && this.__atom !== undefined)
-                    this.__atom.reset();
-                this.__props = v;
-            }
-        };
-    }
-    function reset_state(proto, name, descr) {
-        return {
-            configurable: true,
-            enumerable: true,
-            get() {
-                return this.__state;
-            },
-            set(v) {
-                if (v !== this.__state && this.__atom !== undefined)
-                    this.__atom.reset();
-                this.__state = v;
-            }
-        };
+    const keyList = Object.keys;
+    function shallowEqual(a, b) {
+        if (a === b)
+            return true;
+        if (!(a instanceof Object) || !(b instanceof Object))
+            return false;
+        const keys = keyList(a);
+        const length = keys.length;
+        for (let i = 0; i < length; i++)
+            if (!(keys[i] in b))
+                return false;
+        for (let i = 0; i < length; i++)
+            if (a[keys[i]] !== b[keys[i]])
+                return false;
+        return length === keyList(b).length;
     }
     function createObserverComponent(ReactAtom, BaseComponent, renderError, OrigComponent) {
         const renderFunction = isFunctionComponent(OrigComponent)
@@ -25793,7 +25759,8 @@
                     this.constructor.displayName;
                 this[Symbol.toStringTag] = id;
                 this.__atom = new ReactAtom(id, this);
-                this.__origRender = renderFunction || super.render;
+                this.__origRender =
+                    renderFunction || super.render;
                 this.__lastError = undefined;
                 if (renderError) {
                     this.__lastData = undefined;
@@ -25802,6 +25769,14 @@
             }
             __value() {
                 return this.__origRender(this.props);
+            }
+            shouldComponentUpdate(nextProps, nextState) {
+                const result = super.shouldComponentUpdate
+                    ? super.shouldComponentUpdate(nextProps, nextState)
+                    : (shallowEqual(this.props, nextProps) || this.state !== nextState);
+                if (result)
+                    this.__atom.reset();
+                return result;
             }
             componentDidCatch(error, init) {
                 if (super.componentDidCatch)
@@ -25842,12 +25817,6 @@
         }
         Cls.displayName = displayName;
         Cls.__urc = true;
-        __decorate$1([
-            reset_props
-        ], Cls.prototype, "props", void 0);
-        __decorate$1([
-            reset_state
-        ], Cls.prototype, "state", void 0);
         if (renderFunction) {
             const props = Object.getOwnPropertyNames(OrigComponent);
             for (let i = 0; i < props.length; i++) {
@@ -25972,7 +25941,7 @@
     and limitations under the License.
     ***************************************************************************** */
 
-    function __decorate$2(decorators, target, key, desc) {
+    function __decorate$1(decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
         else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -25986,12 +25955,18 @@
     function action_event(obj, name, descr) {
         return action_decorator(obj, name, descr, false, true);
     }
+    let parentAction = undefined;
     function action_decorator(obj, name, descr, sync, event) {
         if (typeof obj === 'function') {
+            const current = $mol_fiber$1.current;
             const master = new $mol_fiber$1();
             master.calculate = obj;
-            master[Symbol.toStringTag] = `${this}.${name}()`;
-            if ($mol_fiber$1.current)
+            master[Symbol.toStringTag] = (parentAction
+                ? parentAction
+                : (current
+                    ? current[Symbol.toStringTag]
+                    : obj.name)) + '#action';
+            if (current)
                 master.get();
             else
                 master.schedule();
@@ -25999,22 +25974,24 @@
         }
         const calculate = descr.value;
         function handler(slave, ...args) {
-            if (slave) {
+            parentAction = `${this}.${name}()`;
+            if (event || slave) {
                 try {
-                    slave.sync_begin();
+                    if (slave)
+                        slave.sync_begin();
                     calculate.call(this, ...args);
                 }
                 finally {
-                    slave.sync_end();
+                    parentAction = undefined;
+                    if (slave)
+                        slave.sync_end();
                 }
-            }
-            else if (event) {
-                calculate.call(this, ...args);
             }
             else {
                 const master = new $mol_fiber$1();
                 master.calculate = calculate.bind(this, ...args);
-                master[Symbol.toStringTag] = `${this}.${name}()`;
+                master[Symbol.toStringTag] = parentAction;
+                parentAction = undefined;
                 if ($mol_fiber$1.current)
                     master.get();
                 else
@@ -26066,6 +26043,7 @@
     const mem = $$1.$mol_atom2_field;
     const fail = $$1.$mol_fail_hidden;
     const defer = $$1.$mol_fiber_defer;
+    const object2 = $$1.$mol_object2;
 
     function createFiber(calculate) {
         const fiber = new $$1.$mol_fiber();
@@ -26080,23 +26058,36 @@
         error[refreshKey] = refreshable;
     }
     class Queue extends $$1.$mol_object2 {
-        constructor() {
-            super(...arguments);
+        constructor(id) {
+            super();
             this.tasks = [];
             this.scheduled = false;
-            this.refresh = this._refresh.bind(this);
-            this._processing = this.processing.bind(this);
+            this[Symbol.toStringTag] = id || this.constructor.name;
+            this.processing = this.processing.bind(this);
+            this.refresh = this.refresh.bind(this);
+            Object.defineProperty(this.processing, 'name', { value: this[Symbol.toStringTag] + '.processing' });
         }
         run(calculate) {
             const current = $$1.$mol_fiber.current;
             if (!calculate.name && current)
-                Object.defineProperties(calculate, {
-                    name: { value: current[Symbol.toStringTag] + '#task' }
+                Object.defineProperty(calculate, 'name', {
+                    value: current[Symbol.toStringTag] + '#task'
                 });
             this.tasks.push(createFiber(calculate));
             this.refresh();
         }
-        _refresh() {
+        get pending() {
+            const { locked } = this;
+            return locked && !(locked instanceof Error);
+        }
+        get error() {
+            const { locked } = this;
+            return locked instanceof Error ? locked : undefined;
+        }
+        get complete() {
+            return !this.locked;
+        }
+        refresh() {
             if (this.tasks.length === 0)
                 return;
             if (this.scheduled)
@@ -26104,7 +26095,7 @@
             this.scheduled = true;
             // Recreate completed fiber if refresh called from error
             this.tasks[0] = createFiber(this.tasks[0].calculate);
-            defer(this._processing);
+            defer(this.processing);
         }
         processing() {
             if (this.tasks.length === 0)
@@ -26136,7 +26127,7 @@
             this.scheduled = false;
         }
     }
-    __decorate$2([
+    __decorate$1([
         mem
     ], Queue.prototype, "locked", void 0);
 
@@ -26144,14 +26135,12 @@
         return createDecorator(MolReactAtom, BaseComponent, renderError);
     }
 
-    class LocationStore {
+    class LocationStore extends object2 {
         constructor(_, id, ns = 'app') {
+            super();
             this._ = _;
-            this.id = id;
             this.ns = ns;
-        }
-        toString() {
-            return this.id;
+            this[Symbol.toStringTag] = id;
         }
         params() {
             return new URLSearchParams(this._.location.search);
@@ -26223,18 +26212,20 @@
         }
     }
 
-    class PageRepository {
+    class PageRepository extends object2 {
         constructor(_, id, opts) {
+            super();
             this._ = _;
-            this.id = id;
+            this[Symbol.toStringTag] = id;
             this.pages = opts.pages;
             this.key = opts.key;
         }
-        toString() { return this.id; }
         setPageId(e) {
             e.preventDefault();
             const id = e.target.dataset.id;
-            this.page = this.pages.find(page => page.id === id);
+            action(() => {
+                this.page = this.pages.find(page => page.id === id);
+            });
         }
         getPageUrl(page) {
             return this._.locationStore.toUrl({ page });
@@ -26252,7 +26243,7 @@
         }
     }
     __decorate([
-        action
+        action.event
     ], PageRepository.prototype, "setPageId", null);
     __decorate([
         mem
@@ -45122,7 +45113,7 @@
         };
     }
 
-    const observer = createDecorator$1(react_4, (props) => (react_22(ErrorHandler, { id: `${props.ownerId}.error`, error: props.error }, props.children)));
+    const observer = createDecorator$1(react_3, (props) => (react_22(ErrorHandler, { id: `${props.ownerId}.error`, error: props.error }, props.children)));
 
     function uuid() {
         return `${Math.random()}${Date.now()}`.substring(2);
@@ -45170,7 +45161,7 @@
     __decorate([
         action.sync
     ], HelloModel.prototype, "setUser", null);
-    let Hello = class Hello extends react_4 {
+    let Hello = class Hello extends react_3 {
         constructor() {
             super(...arguments);
             this._ = {
@@ -45196,8 +45187,9 @@
         observer
     ], Hello);
 
-    class TodoToAdd {
+    class TodoToAdd extends object2 {
         constructor(_, id) {
+            super();
             this._ = _;
             this.id = id;
             this[Symbol.toStringTag] = id;
@@ -45262,7 +45254,7 @@
             boxSizing: 'border-box'
         }
     });
-    let TodoHeader = class TodoHeader extends react_4 {
+    let TodoHeader = class TodoHeader extends react_3 {
         constructor() {
             super(...arguments);
             this.todoToAdd = new TodoToAdd(this.props._, `${this.props.id}.todoToAdd`);
@@ -45280,8 +45272,9 @@
 
     const ESCAPE_KEY = 27;
     const ENTER_KEY = 13;
-    class TodoItemEdit {
+    class TodoItemEdit extends object2 {
         constructor(opts) {
+            super();
             this[Symbol.toStringTag] = opts.id;
             this.todo = opts.todo;
             this.editText = '';
@@ -45356,7 +45349,7 @@
         action.sync
     ], TodoItemEdit.prototype, "setText", null);
     __decorate([
-        action
+        action.event
     ], TodoItemEdit.prototype, "setEditInputRef", null);
     __decorate([
         action
@@ -45487,7 +45480,7 @@
         }
     }
     const theme = new TodoItemTheme();
-    let TodoItem = class TodoItem extends react_4 {
+    let TodoItem = class TodoItem extends react_3 {
         constructor() {
             super(...arguments);
             this.todoItemEdit = new TodoItemEdit({
@@ -45508,10 +45501,7 @@
             const { updating } = todo;
             return (react_22("li", { id: id, className: css.regular },
                 react_22("input", { id: `${id}-toggle`, className: css.toggle, type: "checkbox", disabled: todo.updateDisabled, checked: todo.completed, onChange: todoItemEdit.toggle }),
-                react_22("label", { id: `${id}-beginEdit`, className: theme.label(todo.completed, todo.updateDisabled), onDoubleClick: todoItemEdit.beginEdit },
-                    updating && '[',
-                    todo.title,
-                    updating && ']'),
+                react_22("label", { id: `${id}-beginEdit`, className: theme.label(todo.completed, updating || todo.updateDisabled), onDoubleClick: todoItemEdit.beginEdit }, todo.title),
                 react_22("button", { id: `${id}-destroy`, className: css.destroy, disabled: todo.removeDisabled, onClick: todoItemEdit.remove })));
         }
     };
@@ -45526,7 +45516,7 @@
             listStyle: 'none'
         }
     });
-    let TodoMain = class TodoMain extends react_4 {
+    let TodoMain = class TodoMain extends react_3 {
         render() {
             const { props: { id, _: { todoRepository: { filteredTodos } } } } = this;
             if (!filteredTodos.length)
@@ -45582,13 +45572,13 @@
         TODO_FILTER["COMPLETE"] = "complete";
         TODO_FILTER["ACTIVE"] = "active";
     })(TODO_FILTER || (TODO_FILTER = {}));
-    class TodoRepository {
+    class TodoRepository extends object2 {
         constructor(_, id) {
+            super();
             this._ = _;
-            this.id = id;
-            this.actions = new Queue();
+            this.actions = new Queue(`${this}.actions`);
+            this[Symbol.toStringTag] = id;
         }
-        toString() { return this.id; }
         get todos() {
             const todos = this.clientTodos || (this._.fetch('/api/todos')
                 .map(data => new Todo(Object.assign({}, data, { created: new Date(data.created), _: { todoRepository: this } }))));
@@ -45818,7 +45808,7 @@
     __decorate([
         action.event
     ], TodoFooterService.prototype, "clickLink", null);
-    let TodoFooter = class TodoFooter extends react_4 {
+    let TodoFooter = class TodoFooter extends react_3 {
         constructor() {
             super(...arguments);
             this.todoFooterService = new TodoFooterService(this.props._);
@@ -45851,7 +45841,7 @@
             boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 25px 50px 0 rgba(0, 0, 0, 0.1)'
         }
     });
-    let TodoApp = class TodoApp extends react_4 {
+    let TodoApp = class TodoApp extends react_3 {
         constructor() {
             super(...arguments);
             this._ = Object.assign({}, this.props._, { todoRepository: new TodoRepository(this.props._, this.props.id + '.todoRepository') });
@@ -45919,7 +45909,7 @@
         }
     }
     const css$4 = new AppTheme().css;
-    let App = class App extends react_4 {
+    let App = class App extends react_3 {
         constructor() {
             super(...arguments);
             this._ = Object.assign({}, this.props._, { locationStore: new LocationStore(this.props._, `${this.props.id}.locationStore`), fetch: fiberize(this.props._.fetchFn, r => r.json()) });
